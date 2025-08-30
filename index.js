@@ -6,7 +6,6 @@ import productRoutes from './routes/product.routes.js'
 import cartRoutes from './routes/cart.routes.js'
 import WishlistRoutes from './routes/wishlist.routes.js'
 import BrandRoutes from './routes/brand.routes.js'
-import userModel from './models/user.model.js'
 
 dotenv.config()
 

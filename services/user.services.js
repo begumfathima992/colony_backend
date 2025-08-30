@@ -8,22 +8,35 @@ import bcrypt from 'bcrypt'
 class UserService {
     async regsiter(req, res) {
         try {
-            let { phone_number, address, shop_name, password } = req.body
+            let { name, email, anniversary_date, birthday_date, password } = req.body
             // console.log(req.body,'req.bodyyyyyyy')
 
-            let findPhoneExist = await userModel.findOne({ where: { phone_number: phone_number }, raw: true, attribute: ['id'] })
+            let findPhoneExist = await userModel.findOne({ where: { email }, raw: true, attribute: ['id'] })
             if (findPhoneExist && findPhoneExist?.id) {
-                return res.status(400).json({ message: `This Phone : ${phone_number} is already register, kindly login your account`, statusCode: 400, success: false })
+                return res.status(400).json({ message: `This Email : ${email} is already register, kindly login your account`, statusCode: 400, success: false })
+            }
+
+            // fetch last membership_number
+            let lastUser = await userModel.findOne({
+                order: [['id', 'DESC']],
+                raw: true,
+                attributes: ['id', 'membership_number']
+            });
+
+            let newMemberId;
+            if (lastUser && lastUser.id) {
+                newMemberId = String(Number(lastUser.membership_number) + 1);
+            } else {
+                newMemberId = "20070040801"; // first record
             }
 
             // password = await encryptStringWithKey((Math.round(Math.random() * 40000780) + shop_name).toLowerCase());
             // password = temp_p?.slice(0, 6)
 
             let encrypt = await bcrypt.hash(password, salt);
-            // console.log(encrypt, 'encrypt,encrypt,encrypt,', 'temp_p')
-            // return
+
             let obj = {
-                phone_number, shop_name, address, password: encrypt,
+                name, email, password: encrypt, membership_number: newMemberId, anniversary_date, birthday_date,
             }
             await userModel.create(obj)
             return res.status(201).json({ message: "Register success", statusCode: 201, success: true })
@@ -36,11 +49,9 @@ class UserService {
     // generateAccessTok
     async login(req, res) {
         try {
-            // console.log("first", req.body)
+            let { email, password } = req.body
 
-            let { phone_number, password } = req.body
-
-            let find = await userModel.findOne({ where: { phone_number }, raw: true })
+            let find = await userModel.findOne({ where: { email }, raw: true })
             // console.log(find, "findEmailfindEmail")
 
             if (!find) {
@@ -80,7 +91,7 @@ class UserService {
                 return res.status(400).json({ message: "user not found" })
             }
             await userModel?.update({ access_token: null }, { where: { id: user_obj?.id } })
-            return res.status(200).json({ message: "logout success" })
+            return res.status(200).json({ message: "logout success", status: 200, success: true })
         }
         catch (error) {
             console.log(error, "errorerror")

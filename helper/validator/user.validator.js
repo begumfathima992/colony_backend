@@ -1,22 +1,23 @@
 import Joi from "joi";
 
 export const UserSchema = Joi.object({
-    shop_name: Joi.string().min(3).max(30).required().label("shop_name"),
-    phone_number: Joi.string().max(16).required().label("phone_number"),
-    address: Joi.string().required().max(90).label("address"),
-    password: Joi.string().min(4).required().label('password')
+    name: Joi.string().trim().min(3).max(100).required().label("name"),
+    password: Joi.string()
+        .trim()
+        .min(3)
+        .max(100)
+        .pattern(/^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).*$/, "password rules")
+        .required()
+        .label("password"),
+    email: Joi.string().trim().max(16).required().email({ tlds: { allow: false } }).label("email"),
 }).required().min(1).label("Data")
 
 
-
 export const USerLoginSchema = Joi.object({
-    phone_number: Joi.string()
-        .trim()
-        .required()
-        .label('phone_number'),
+    email: Joi.string().trim().max(16).required().email({ tlds: { allow: false } }).label("email"),
     password: Joi.string()
         .trim().
-        min(3).max(50)
+        min(3).max(70)
         .required()
         .label('password')
 }).required().min(1).label("Data");
