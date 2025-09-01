@@ -30,7 +30,7 @@ class userController {
             // joi validation
             let { error } = USerLoginSchema.validate(req.body, options)
             if (error) {
-                return res.status(400).json({ message: error.details[0]?.message, statusCode: 400 })
+                return res.status(400).json({ message: error.details[0]?.message, statusCode: 400, success: false })
             }
 
             await userServiceObj.login(req, res)
