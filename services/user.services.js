@@ -3,15 +3,18 @@ import userModel from "../models/user.model.js";
 let salt = 10
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+import { Op } from "sequelize";
 
 
 class UserService {
     async regsiter(req, res) {
         try {
             let { name, email, anniversary_date, birthday_date, password } = req.body
-            // console.log(req.body,'req.bodyyyyyyy')
+            // console.log(req.body, 'req.bodyyyyyyy')
 
-            let findPhoneExist = await userModel.findOne({ where: { email }, raw: true, attribute: ['id'] })
+            let findPhoneExist = await userModel.findOne({ where: { email }, raw: true, attributes: ['id'] })
+            // console.log(findPhoneExist, 'findPhoneExistfindPhoneExist')
+
             if (findPhoneExist && findPhoneExist?.id) {
                 return res.status(400).json({ message: `This Email : ${email} is already register, kindly login your account`, statusCode: 400, success: false })
             }
@@ -49,9 +52,14 @@ class UserService {
     // generateAccessTok
     async login(req, res) {
         try {
-            let { email, password } = req.body
+            let { email, password } = req.body// here we got 'membership number' or 'email' in email key 
 
-            let find = await userModel.findOne({ where: { email }, raw: true })
+            let find = await userModel.findOne({
+                where: {
+                    [Op.or]: [{ email }, { membership_number: email }]
+                },
+                raw: true
+            })
             // console.log(find, "findEmailfindEmail")
 
             if (!find) {
@@ -76,7 +84,7 @@ class UserService {
             find.token = generateToken
             find.access_token = access_token
 
-            return res.status(200).json({ mesage: "Login Success", data: find, statusCode: 200, success: true })
+            return res.status(200).json({ message: "Login Success", data: find, statusCode: 200, success: true })
         } catch (error) {
             console.log(error)
             return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
@@ -88,10 +96,10 @@ class UserService {
             let user_obj = req.userData
             let findUSer = await userModel?.findOne({ where: { id: user_obj?.id } })
             if (!findUSer) {
-                return res.status(400).json({ message: "user not found" })
+                return res.status(400).json({ message: "user not found", statusCode: 400, success: false })
             }
             await userModel?.update({ access_token: null }, { where: { id: user_obj?.id } })
-            return res.status(200).json({ message: "logout success", status: 200, success: true })
+            return res.status(200).json({ message: "logout success", statusCode: 200, success: true })
         }
         catch (error) {
             console.log(error, "errorerror")
