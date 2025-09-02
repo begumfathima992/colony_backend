@@ -1,5 +1,5 @@
 import { encryptStringWithKey, generateAccessToken } from "../helper/extra.js";
-import userModel from "../models/user.model.js";
+import userModel from "../models/user.js";
 let salt = 10
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'

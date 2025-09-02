@@ -1,4 +1,4 @@
-import brandModel from "../models/brand.model.js";
+import brandModel from "../models/brand.js";
 
 class Brand {
     async getMainBrand(req, res) {

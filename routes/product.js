@@ -1,6 +1,6 @@
 import express from 'express'
 import { authorize, authorize_optional } from '../helper/auth.js'
-import productControllerObj from '../controllers/product.controller.js'
+import productControllerObj from '../controllers/product.js'
 
 const productRoutes = express.Router()
 

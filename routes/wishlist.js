@@ -1,6 +1,6 @@
 import express from "express";
 import { authorize } from "../helper/auth.js";
-import WishlistControllerObj from "../controllers/wishlist.controller.js";
+import WishlistControllerObj from "../controllers/wishlist.js";
 
 const WishlistRoutes = express.Router();
 

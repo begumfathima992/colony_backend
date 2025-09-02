@@ -1,5 +1,5 @@
 import express from "express";
-import CartControllerObj from "../controllers/cart.controller.js";
+import CartControllerObj from "../controllers/cart.js";
 import { authorize } from "../helper/auth.js";
 import { responseHandleMiddleware } from "../helper/responseHandleMiddleware.js";
 

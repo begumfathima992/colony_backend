@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import userModel from '../models/user.model.js';
+import userModel from '../models/user.js';
 
 export const authorize = async (req, res, next) => {
     try {
@@ -60,7 +60,7 @@ export const authorize_optional = async (req, res, next) => {
         // console.log("token ", token);
         // return
         if (!token) {
-          return  next()
+            return next()
         }
 
         let payload = jwt.verify(token, 'vape_db', {
