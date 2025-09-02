@@ -37,7 +37,6 @@ export const authorize = async (req, res, next) => {
                 message: "Please login to continue...",
                 statusCode: 401,
             });
-
         }
 
         req.userData = findDataExist;
