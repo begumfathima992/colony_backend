@@ -42,7 +42,10 @@ class UserService {
                 name, email, password: encrypt, membership_number: newMemberId, anniversary_date, birthday_date,
             }
             await userModel.create(obj)
-            return res.status(201).json({ message: "Register success", statusCode: 201, success: true })
+            let responseObj = {
+                memberShipNumber: newMemberId
+            }
+            return res.status(201).json({ message: "Register success", data: responseObj, statusCode: 201, success: true })
         } catch (error) {
             console.log(error, "eororrororo")
             return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
