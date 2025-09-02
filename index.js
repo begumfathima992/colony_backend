@@ -1,7 +1,7 @@
 import express from 'express'
 import dotenv from 'dotenv'
 import userRoutes from './routes/user.routes.js'
-import { environmentVar } from './config/environmentVariable.js'
+import  environmentVar  from './config/environmentVariables.js'
 import productRoutes from './routes/product.routes.js'
 import cartRoutes from './routes/cart.routes.js'
 import WishlistRoutes from './routes/wishlist.routes.js'
