@@ -6,6 +6,7 @@ const userModel = dbconnection.define(
     id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true, unique: true },
     name: { type: DataTypes.STRING, required: true },
     email: { type: DataTypes.STRING, required: true },
+    phone: { type: DataTypes.STRING, required: false },
     password: { type: DataTypes.STRING, required: true },
     
     anniversary_date: { type: DataTypes.STRING, required: false, allowNull: true },

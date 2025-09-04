@@ -9,7 +9,7 @@ import { Op } from "sequelize";
 class UserService {
     async regsiter(req, res) {
         try {
-            let { name, email, anniversary_date, birthday_date, password } = req.body
+            let { name, email, anniversary_date, birthday_date, password, phone } = req.body
             // console.log(req.body, 'req.bodyyyyyyy')
 
             let findPhoneExist = await userModel.findOne({ where: { email }, raw: true, attributes: ['id'] })
@@ -39,7 +39,7 @@ class UserService {
             let encrypt = await bcrypt.hash(password, salt);
 
             let obj = {
-                name, email, password: encrypt, membership_number: newMemberId, anniversary_date, birthday_date,
+                name, email, password: encrypt, membership_number: newMemberId, anniversary_date, birthday_date, phone
             }
             await userModel.create(obj)
             let responseObj = {
