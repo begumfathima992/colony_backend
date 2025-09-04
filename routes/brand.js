@@ -1,6 +1,6 @@
 
 
-import BrandControllerObj from "../controllers/brand.controller.js";
+import BrandControllerObj from "../controllers/brand.js";
 import express from 'express'
 import { responseHandleMiddleware } from "../helper/responseHandleMiddleware.js";
 

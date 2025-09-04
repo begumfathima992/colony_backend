@@ -1,5 +1,5 @@
-import { subBrandSchema } from "../helper/validator/brand.validator.js";
-import BrandServicesObj from "../services/brand.services.js"
+import { subBrandSchema } from "../helper/validator/brand.js";
+import BrandServicesObj from "../services/brand.js"
 
 const options = {
     abortEarly: false,

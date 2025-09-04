@@ -1,5 +1,5 @@
-import { wishlistSchema } from "../helper/validator/wishlist.validator.js";
-import WishlistServicesObj from "../services/wishlist.service.js";
+import { wishlistSchema } from "../helper/validator/wishlist.js";
+import WishlistServicesObj from "../services/wishlist.js";
 const options = {
     abortEarly: false,
     allowUnknown: true,

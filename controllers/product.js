@@ -1,5 +1,5 @@
-import { getProductSchema } from "../helper/validator/product.validator.js"
-import ProductServicesObj from "../services/product.services.js"
+import { getProductSchema } from "../helper/validator/product.js"
+import ProductServicesObj from "../services/product.js"
 
 const options = {
     abortEarly: false,

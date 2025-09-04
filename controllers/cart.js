@@ -1,5 +1,5 @@
-import { CartSchema, deleteProductFromCartSchema } from "../helper/validator/cart.validator.js";
-import CartServiceObj from "../services/cart.services.js";
+import { CartSchema, deleteProductFromCartSchema } from "../helper/validator/cart.js";
+import CartServiceObj from "../services/cart.js";
 
 
 

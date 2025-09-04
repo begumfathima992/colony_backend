@@ -1,7 +1,7 @@
 import { Op } from "sequelize";
 
-import wishlistModel from "../models/wishlist.model.js";
-import productModel from "../models/product.model.js";
+import wishlistModel from "../models/wishlist.js";
+import productModel from "../models/product.js";
 import dbconnection from "../config/dbconfig.js";
 
 class wishlistServices {
@@ -123,7 +123,7 @@ class wishlistServices {
             let replacements = { user_id: user_id };
 
             if (searchKeyword) {
-     query += `
+                query += `
     AND (
       p.title LIKE :searchKeyword COLLATE utf8mb4_unicode_ci OR
       p.description LIKE :searchKeyword COLLATE utf8mb4_unicode_ci
@@ -136,8 +136,8 @@ class wishlistServices {
                 query += ` AND p.id = :product_id COLLATE utf8mb4_unicode_ci`;
                 replacements.product_id = product_id;
             }
-// Now add group/order/limit
-query += `
+            // Now add group/order/limit
+            query += `
   GROUP BY p.id, w.id
   ORDER BY w.id DESC
   LIMIT :limit OFFSET :offset

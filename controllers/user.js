@@ -1,7 +1,7 @@
 import Joi from "joi";
-import userServiceObj from "../services/user.services.js";
+import userServiceObj from "../services/user.js";
 import moment from 'moment'
-import { USerLoginSchema, UserSchema } from "../helper/validator/user.validator.js";
+import { change_password_schema, USerLoginSchema, UserSchema } from "../helper/validator/user.js";
 
 
 const options = {
@@ -42,6 +42,17 @@ class userController {
     async logout(req, res) {
         try {
             await userServiceObj.logout(req, res)
+        } catch (error) {
+            return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+        }
+    }
+    async change_password(req, res) {
+        try {
+            let { error } = change_password_schema.validate(req.body, options)
+            if (error) {
+                return res.status(400).json({ message: error.details[0]?.message, statusCode: 400, success: false })
+            }
+            userServiceObj.change_password(req,res)
         } catch (error) {
             return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
         }

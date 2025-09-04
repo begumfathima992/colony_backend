@@ -1,5 +1,5 @@
 import { encryptStringWithKey, generateAccessToken } from "../helper/extra.js";
-import userModel from "../models/user.model.js";
+import userModel from "../models/user.js";
 let salt = 10
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
@@ -110,6 +110,33 @@ class UserService {
         }
     }
 
+    async change_password(req, res) {
+        try {
+            let token_user = req.userData
+            let { current_password, new_password, confirm_password } = req.body
+
+            let fetch = await userModel?.findOne({ where: { id: token_user?.id }, raw: true, attributes: ['id', 'password'] })
+            let checkpassword = await bcrypt.compare(current_password, fetch?.password);
+            // console.log(checkpassword, "checkpassword ", fetch, token_user)
+
+            if (!checkpassword) {
+                res.status(400).json({ message: "Current Password is not valid", success: false, statusCode: 400 })
+                return;
+            } else if (new_password != confirm_password) {
+                res.status(400).json({ message: "New Password And Confirm Password Must Be Same", success: false, statusCode: 400 })
+                return;
+            } else if (current_password?.trim() == new_password?.trim()) {
+                res.status(400).json({ message: "Current Password And New Password Must Be Different", success: false, statusCode: 400 })
+                return;
+            }
+
+            let encrypt = await bcrypt.hash(new_password, salt);
+            await userModel?.update({ password: encrypt }, { where: { id: fetch?.id } })
+            return res.status(200).json({ message: "Password change success", statusCode: 200, success: true })
+        } catch (error) {
+            return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+        }
+    }
 }
 const userServiceObj = new UserService()
 

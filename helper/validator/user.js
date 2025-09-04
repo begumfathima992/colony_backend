@@ -15,8 +15,8 @@ export const UserSchema = Joi.object({
 
 export const USerLoginSchema = Joi.object({
     email: Joi.string().trim().max(56).required()
-    // .email({ tlds: { allow: false } })
-    .label("Email or Membership Number"),
+        // .email({ tlds: { allow: false } })
+        .label("Email or Membership Number"),
     password: Joi.string()
         .trim().
         min(3).max(70)
@@ -24,3 +24,14 @@ export const USerLoginSchema = Joi.object({
         .label('password')
 }).required().min(1).label("Data");
 
+export const change_password_schema = Joi.object({
+    current_password: Joi.string().trim().min(3)
+        .pattern(/^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).*$/, "password rules")
+        .required().label("current_password"),
+    new_password: Joi.string().min(3).max(40).required()
+        .pattern(/^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).*$/, "password rules")
+        .label("new_password"),
+    confirm_password: Joi.string().min(3)
+        .pattern(/^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).*$/, "password rules")
+        .max(40).required().label("confirm_new_password")
+})
