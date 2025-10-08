@@ -1,5 +1,5 @@
 import faqCategoryModel from "../models/faqCategory.js";
-import faqQuestionAnswerModel from "../models/faqQuestionAnswer.js";
+import faqQuestionAnswerModel from "../models/faqquestionanswer.js";
 
 
 class FaqQuestionAnswer {

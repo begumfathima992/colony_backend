@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "ziggy",
+    "password": "ziggy@123",
+    "database": "colony",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "ziggy",
+    "password": "ziggy@123",
+    "database": "colony_test",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "ziggy",
+    "password": "ziggy@123",
+    "database": "colony_prod",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  }
+}

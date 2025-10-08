@@ -1,32 +1,10 @@
-import { config } from 'dotenv'
-import { Sequelize } from 'sequelize'
+import { Sequelize } from "sequelize";
+import env from "./environmentVariables.js"; // make sure this is also an ES module
 
-config()
-const dbconnection = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USERNAME,
-    process.env.DB_PASSWORD, {
+const sequelize = new Sequelize(env.DB_NAME, env.DB_USER, env.DB_PASSWORD, {
+  host: env.DB_HOST || "127.0.0.1",
+  dialect: env.DB_DIALECT || "postgres",
+  logging: false,
+});
 
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialectOptions: {
-        timezone: "local",
-    },
-    // timezone: "+00:00",
-    // timezone: "Z",
-    dialect: 'mysql',
-    define: {
-        timestamps: true
-    },
-    pool: {
-        max: 15,
-        min: 0,
-        maxIdleTime: 1000,
-        acquire: 30000000,
-        idle: 100000000
-    },
-    logging: false
-}
-
-)
-export default dbconnection
+export default sequelize;

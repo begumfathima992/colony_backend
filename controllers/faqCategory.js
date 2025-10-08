@@ -1,5 +1,5 @@
 import Joi from "joi";
-import userServiceObj from "../services/user.js";
+import userServiceObj from "../services/user.services.js";
 import moment from 'moment'
 import { FaqCategorySchema } from "../helper/validator/faqCategory.js";
 import faqCategoryService from "../services/faqCategory.js";
