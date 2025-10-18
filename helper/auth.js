@@ -58,54 +58,55 @@ import userModel from '../models/user.model.js';
 
 
 export const authorize = async (req, res, next) => {
-    try {
-        const token = req.headers["token"];
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: "Please login to continue",
-                statusCode: 401,
-            });
-        }
-
-        const payload = jwt.verify(token, "vape_db", { algorithm: "HS512" });
-
-        const findUser = await userModel.findOne({
-            where: { id: payload.id },
-            raw: true,
-        });
-
-        if (!findUser) {
-            return res.status(400).json({
-                success: false,
-                message: "User not found",
-                statusCode: 400,
-            });
-        }
-
-        // Optional: check if access_token exists
-        if (!findUser.access_token) {
-            return res.status(401).json({
-                success: false,
-                message: "Please login to continue...",
-                statusCode: 401,
-            });
-        }
-
-        // attach user to request
-        req.userData = findUser;
-        req.id = findUser.id;
-
-        next();
-    } catch (err) {
-        console.error("JWT verification error:", err);
-        return res.status(401).json({
-            success: false,
-            message: "Invalid token. Please login.",
-            statusCode: 401,
-        });
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login to continue",
+        statusCode: 401,
+      });
     }
+
+    // Extract token from "Bearer <token>"
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login to continue",
+        statusCode: 401,
+      });
+    }
+
+    const payload = jwt.verify(token, "vape_db", { algorithm: "HS512" });
+
+    const findUser = await userModel.findOne({
+      where: { id: payload.id },
+      raw: true,
+    });
+
+    if (!findUser || !findUser.access_token) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login to continue",
+        statusCode: 401,
+      });
+    }
+
+    req.userData = findUser;
+    req.id = findUser.id;
+
+    next();
+  } catch (err) {
+    console.error("JWT verification error:", err);
+    return res.status(401).json({
+      success: false,
+      message: "Invalid token. Please login.",
+      statusCode: 401,
+    });
+  }
 };
+
 
 
 

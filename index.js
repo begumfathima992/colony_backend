@@ -2,11 +2,11 @@ import express from "express";
 import dotenv from "dotenv";
 import sequelize from "./config/dbconfig.js";   // Sequelize instance
 import environmentVar from "./config/environmentVariables.js";
-
+import reservationRoutes from './routes/reservation.routes.js';
 // Routes
 import userRoutes from "./routes/user.routes.js";
-import faqCategoryRoutes from "./routes/faqCategory.js";
-import faqQuestionAnswerRoutes from "./routes/faqQuestionAnswer.js";
+// import faqCategoryRoutes from "./routes/faqCategory.js";
+// import faqQuestionAnswerRoutes from "./routes/faqQuestionAnswer.js";
 
 // Load environment variables
 dotenv.config();
@@ -25,8 +25,9 @@ app.get("/health", (req, res) => {
 
 // Main routes
 app.use("/user", userRoutes);
-app.use("/faq_category", faqCategoryRoutes);
-app.use("/faq_question_answer", faqQuestionAnswerRoutes);
+app.use('/reservations', reservationRoutes);
+// app.use("/faq_category", faqCategoryRoutes);
+// app.use("/faq_question_answer", faqQuestionAnswerRoutes);
 
 // Default fallback route (404 handler)
 app.use((req, res) => {

@@ -1,6 +1,7 @@
 import { Sequelize, DataTypes } from 'sequelize'
 import dbconnection from '../config/dbconfig.js'
 
+
 const userModel = dbconnection.define(
     'user', {
     id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true, unique: true },
@@ -25,4 +26,5 @@ const userModel = dbconnection.define(
     },
 }, { timestamps: false, tableName: 'user' }
 )
+
 export default userModel

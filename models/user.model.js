@@ -1,5 +1,5 @@
-import { Model, DataTypes } from "sequelize";
-import sequelize from "../config/dbconfig.js";
+import { Model, DataTypes } from 'sequelize';
+import sequelize from '../config/dbconfig.js';
 
 class User extends Model {}
 
@@ -15,8 +15,8 @@ User.init(
   },
   {
     sequelize,
-    modelName: "User",
-    tableName: "users",
+    modelName: 'User',
+    tableName: 'users',
     timestamps: true,
   }
 );
