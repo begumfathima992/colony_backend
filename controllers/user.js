@@ -1,7 +1,7 @@
 import Joi from "joi";
-import userServiceObj from "../services/user.js";
+import userServiceObj from "../services/user.services.js";
 import moment from 'moment'
-import { change_password_schema, USerLoginSchema, UserSchema } from "../helper/validator/user.js";
+import { change_password_schema, UserLoginSchema, UserSchema, SendOtpSchema } from "../helper/validator/user.validator.js";
 
 
 const options = {
@@ -18,7 +18,7 @@ class userController {
             if (error) {
                 return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
             }
-            await userServiceObj.regsiter(req, res)
+            await userServiceObj.register(req, res)
         } catch (error) {
             return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
         }
@@ -28,7 +28,7 @@ class userController {
         try {
             // console.log("first", req.body)
             // joi validation
-            let { error } = USerLoginSchema.validate(req.body, options)
+            let { error } = UserLoginSchema.validate(req.body, options)
             if (error) {
                 return res.status(400).json({ message: error.details[0]?.message, statusCode: 400, success: false })
             }
@@ -57,6 +57,49 @@ class userController {
             return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
         }
     }
+
+
+
+      async send_otp(req, res) {
+    try {
+      // Validate input
+    //   const { error } = SendOtpSchema.validate(req.body);
+    //   if (error) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: error.details[0].message,
+    //     });
+    //   }
+
+           await userServiceObj.send_otp(req, res)
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+
+    async verify_otp(req, res) {
+    try {
+      // Validate input
+    //   const { error } = SendOtpSchema.validate(req.body);
+    //   if (error) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: error.details[0].message,
+    //     });
+    //   }
+
+           await userServiceObj.verify_otp(req, res)
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+
+
+
 }
 const userControllerObj = new userController()
 

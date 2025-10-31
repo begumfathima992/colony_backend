@@ -33,6 +33,29 @@ Reservation.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    dietaryRestrictionByUser: {
+  type: DataTypes.STRING,
+  allowNull: true,
+},
+dietaryRestrictionByParty: {
+  type: DataTypes.STRING,
+  allowNull: true,
+},
+occasion: {
+  type: DataTypes.STRING,
+  allowNull: true,
+},
+cancellationPolicyAccepted: {
+  type: DataTypes.BOOLEAN,
+  allowNull: false,
+  defaultValue: false,
+},
+reservationId: {
+  type: DataTypes.STRING,
+  allowNull: true,
+  unique: true,
+},
+
    status: {
       type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'CANCELLED'), // ENUM must match DB
       defaultValue: 'PENDING',

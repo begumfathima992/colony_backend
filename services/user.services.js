@@ -1,10 +1,16 @@
 import { encryptStringWithKey, generateAccessToken } from "../helper/extra.js";
 import userModel from "../models/user.model.js";
 import { Op } from "sequelize";
+import dotenv from "dotenv";
+import twilio from "twilio";
 
 let salt = 10
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+
+
+
+const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 
 class UserService {
@@ -296,6 +302,68 @@ async register(req, res) {
 
         }
     }
+
+    ////////otp
+
+async send_otp(req, res) {
+  try {
+    const { phone } = req.body;
+
+    const verification = await client.verify.v2
+      .services(process.env.TWILIO_VERIFY_SID)
+      .verifications.create({ to: phone, channel: "sms" });
+
+    res.json({ success: true, status: verification.status });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+
+
+///////VERIFY
+
+async verify_otp(req, res)  {
+  try {
+    const { phone, code } = req.body;
+
+    const verification_check = await client.verify.v2
+      .services(process.env.TWILIO_VERIFY_SID)
+      .verificationChecks.create({ to: phone, code });
+
+    if (verification_check.status === "approved") {
+      res.json({ success: true, message: "✅ Phone verified successfully!" });
+    } else {
+      res.json({ success: false, message: "❌ Invalid OTP" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ////////////
     //   async change_password(req, res) {
     //     try {

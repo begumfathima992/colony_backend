@@ -3,16 +3,23 @@ import dotenv from "dotenv";
 import sequelize from "./config/dbconfig.js";   // Sequelize instance
 import environmentVar from "./config/environmentVariables.js";
 import reservationRoutes from './routes/reservation.routes.js';
+import cors from 'cors';
 // Routes
-import userRoutes from "./routes/user.routes.js";
+import userRoutes from "./routes/user.js";
 // import faqCategoryRoutes from "./routes/faqCategory.js";
 // import faqQuestionAnswerRoutes from "./routes/faqQuestionAnswer.js";
 
 // Load environment variables
 dotenv.config();
 
+
 // Initialize app
 const app = express();
+app.use(cors({
+  origin: 'http://localhost:3000', // React app URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // Middlewares
 app.use(express.json());

@@ -64,3 +64,9 @@ export const change_password_schema = Joi.object({
         .max(40).required().label("confirm_new_password")
 })
 
+export const SendOtpSchema = Joi.object({
+  phone: Joi.string()
+    .pattern(/^\+44\d{10}$/) // UK phone example: +44XXXXXXXXXX
+    .required(),
+});
+
