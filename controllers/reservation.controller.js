@@ -81,24 +81,24 @@ class ReservationController {
       }
 
       const reservation = await reservationServiceObj.createReservation({
-        user_id:userObj?.id,
+        user_id: userObj?.id,
         date,
         time,
         partySize,
         status: 'PENDING',
       });
-         const dropdownOptions = {
-      dietaryRestrictionByUser: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
-      dietaryRestrictionByParty: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
-      occasions: ['Birthday', 'Anniversary', 'Business Meeting', 'Other'],
-    };
+      const dropdownOptions = {
+        dietaryRestrictionByUser: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
+        dietaryRestrictionByParty: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
+        occasions: ['Birthday', 'Anniversary', 'Business Meeting', 'Other'],
+      };
 
-let obj={
-  reservation,userObj,dropdownOptions
+      let obj = {
+        reservation, userObj, dropdownOptions
 
-}
+      }
 
-      return res.status(201).json({ success: true, obj});
+      return res.status(201).json({ success: true, obj });
     } catch (error) {
       console.error('Create Step1 Reservation Error:', error);
       return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -106,83 +106,83 @@ let obj={
   }
 
   // STEP 2 — Get reservation + user details for second screen
-//  async getReservationDetails(req, res) {
-//   try {
-//     const { id } = req.params;
+  //  async getReservationDetails(req, res) {
+  //   try {
+  //     const { id } = req.params;
 
-//     // Get reservation by ID
-//     const reservation = await reservationServiceObj.getReservationById(id);
-//     if (!reservation) {
-//       return res.status(404).json({ success: false, message: 'Reservation not found' });
-//     }
+  //     // Get reservation by ID
+  //     const reservation = await reservationServiceObj.getReservationById(id);
+  //     if (!reservation) {
+  //       return res.status(404).json({ success: false, message: 'Reservation not found' });
+  //     }
 
-//     // Get user details
-//     const user = await User.findByPk(reservation.user_id, {
-//       attributes: ['id', 'name', 'phone'], // match actual column names
-//     });
+  //     // Get user details
+  //     const user = await User.findByPk(reservation.user_id, {
+  //       attributes: ['id', 'name', 'phone'], // match actual column names
+  //     });
 
-//     // Build response
-//     const response = {
-//       id: reservation.id,
-//       userName: user?.name || '',       // use 'name'
-//       phoneNumber: user?.phone || null, // use 'phone'
-//       date: reservation.date,
-//       time: reservation.time,
-//       partySize: reservation.partySize,
-//       dietaryRestrictionByUser: reservation.dietaryRestrictionByUser,
-//       dietaryRestrictionByParty: reservation.dietaryRestrictionByParty,
-//       occasion: reservation.occasion,
-//       cancellationPolicyAccepted: reservation.cancellationPolicyAccepted,
-//     };
+  //     // Build response
+  //     const response = {
+  //       id: reservation.id,
+  //       userName: user?.name || '',       // use 'name'
+  //       phoneNumber: user?.phone || null, // use 'phone'
+  //       date: reservation.date,
+  //       time: reservation.time,
+  //       partySize: reservation.partySize,
+  //       dietaryRestrictionByUser: reservation.dietaryRestrictionByUser,
+  //       dietaryRestrictionByParty: reservation.dietaryRestrictionByParty,
+  //       occasion: reservation.occasion,
+  //       cancellationPolicyAccepted: reservation.cancellationPolicyAccepted,
+  //     };
 
-//     // Dropdown options
-//     const dropdownOptions = {
-//       dietaryRestrictionByUser: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
-//       dietaryRestrictionByParty: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
-//       occasions: ['Birthday', 'Anniversary', 'Business Meeting', 'Other'],
-//     };
+  //     // Dropdown options
+  //     const dropdownOptions = {
+  //       dietaryRestrictionByUser: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
+  //       dietaryRestrictionByParty: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
+  //       occasions: ['Birthday', 'Anniversary', 'Business Meeting', 'Other'],
+  //     };
 
-//     return res.status(200).json({ success: true, reservation: response, dropdownOptions });
-//   } catch (error) {
-//     console.error('Get Reservation Details Error:', error);
-//     return res.status(500).json({ success: false, message: 'Internal Server Error' });
-//   }
-// }
+  //     return res.status(200).json({ success: true, reservation: response, dropdownOptions });
+  //   } catch (error) {
+  //     console.error('Get Reservation Details Error:', error);
+  //     return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  //   }
+  // }
 
 
-//   // STEP 2 — Update reservation with user input (dietary, occasion, cancellation)
-//   async updateStep2(req, res) {
-//     try {
-//       const { id } = req.params;
-//       const {
-//         dietaryRestrictionByUser,
-//         dietaryRestrictionByParty,
-//         occasion,
-//         cancellationPolicyAccepted,
-//       } = req.body;
+  //   // STEP 2 — Update reservation with user input (dietary, occasion, cancellation)
+  //   async updateStep2(req, res) {
+  //     try {
+  //       const { id } = req.params;
+  //       const {
+  //         dietaryRestrictionByUser,
+  //         dietaryRestrictionByParty,
+  //         occasion,
+  //         cancellationPolicyAccepted,
+  //       } = req.body;
 
-//       if (!cancellationPolicyAccepted) {
-//         return res.status(400).json({
-//           success: false,
-//           message: 'You must accept the cancellation policy to proceed',
-//         });
-//       }
+  //       if (!cancellationPolicyAccepted) {
+  //         return res.status(400).json({
+  //           success: false,
+  //           message: 'You must accept the cancellation policy to proceed',
+  //         });
+  //       }
 
-//       const updatedReservation = await reservationServiceObj.updateReservation(id, {
-//         dietaryRestrictionByUser: dietaryRestrictionByUser || null,
-//         dietaryRestrictionByParty: dietaryRestrictionByParty || null,
-//         occasion: occasion || null,
-//         cancellationPolicyAccepted: true,
-//       });
+  //       const updatedReservation = await reservationServiceObj.updateReservation(id, {
+  //         dietaryRestrictionByUser: dietaryRestrictionByUser || null,
+  //         dietaryRestrictionByParty: dietaryRestrictionByParty || null,
+  //         occasion: occasion || null,
+  //         cancellationPolicyAccepted: true,
+  //       });
 
-//       return res.status(200).json({ success: true, updatedReservation });
-      
-//     } catch (error) {
-//       console.error('Update Step2 Reservation Error:', error);
-//       return res.status(500).json({ success: false, message: 'Internal Server Error' });
-//     }
-//   }
-    async createPaymentIntent(req, res) {
+  //       return res.status(200).json({ success: true, updatedReservation });
+
+  //     } catch (error) {
+  //       console.error('Update Step2 Reservation Error:', error);
+  //       return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  //     }
+  //   }
+  async createPaymentIntent(req, res) {
     try {
       const { reservationId } = req.body;
 
@@ -217,7 +217,7 @@ let obj={
   }
 
 
-  
+
 }
 
 const reservationController = new ReservationController();
