@@ -65,6 +65,7 @@
 import reservationServiceObj from '../services/reservation.service.js';
 import { User } from '../models/index.model.js'; // User model
 import stripe from '../config/stripe.js'
+import { cancellationPolicy, dropdownOptions } from '../helper/staticData.js';
 
 class ReservationController {
   // STEP 1 — Create base reservation
@@ -87,14 +88,12 @@ class ReservationController {
         partySize,
         status: 'PENDING',
       });
-      const dropdownOptions = {
-        dietaryRestrictionByUser: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
-        dietaryRestrictionByParty: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-Free', 'None'],
-        occasions: ['Birthday', 'Anniversary', 'Business Meeting', 'Other'],
-      };
 
       let obj = {
-        reservation, userObj, dropdownOptions
+        reservation,
+        userObj,
+        dropdownOptions,
+        cancellationPolicy
 
       }
 
