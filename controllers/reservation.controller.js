@@ -88,7 +88,10 @@ class ReservationController {
         partySize,
         status: 'PENDING',
       });
-
+      delete userObj.password
+      delete userObj.access_token
+      delete userObj.createdAt
+      delete userObj.updatedAt
       let obj = {
         reservation,
         userObj,
