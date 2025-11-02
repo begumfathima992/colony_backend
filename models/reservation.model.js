@@ -17,13 +17,14 @@ Reservation.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    partySize: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
+   partySize: {
+  type: DataTypes.INTEGER,
+  allowNull: false,
+  field: 'party_size', // maps model property to DB column
+},
     tableNumber: {
       type: DataTypes.INTEGER,
-      allowNull: true, // optional
+      allowNull: true,
     },
     note: {
       type: DataTypes.TEXT,
@@ -33,31 +34,28 @@ Reservation.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    dietaryRestrictionByUser: {
-  type: DataTypes.STRING,
-  allowNull: true,
-},
-dietaryRestrictionByParty: {
-  type: DataTypes.STRING,
-  allowNull: true,
-},
-occasion: {
-  type: DataTypes.STRING,
-  allowNull: true,
-},
-cancellationPolicyAccepted: {
-  type: DataTypes.BOOLEAN,
-  allowNull: false,
-  defaultValue: false,
-},
-reservationId: {
-  type: DataTypes.STRING,
-  allowNull: true,
-  unique: true,
-},
-
-   status: {
-      type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'CANCELLED'), // ENUM must match DB
+    // ✅ All dropdown-related data in one JSONB column
+    extraOptions: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    // ✅ Cancellation policy details
+    cancellationPolicy: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    cancellationPolicyAccepted: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    reservationId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    status: {
+      type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'CANCELLED'),
       defaultValue: 'PENDING',
     },
   },

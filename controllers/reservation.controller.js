@@ -64,7 +64,7 @@
 // export default reservationController;
 import reservationServiceObj from '../services/reservation.service.js';
 import { User } from '../models/index.model.js'; // User model
-import stripe from '../config/stripe.js'
+import stripe, {stripeWebhookSecret} from '../config/stripe.js'
 import { cancellationPolicy, dropdownOptions } from '../helper/staticData.js';
 
 class ReservationController {
@@ -106,6 +106,39 @@ class ReservationController {
       return res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
   }
+
+
+  // controllers/reservation.controller.js
+
+async updateReservation(req, res) {
+  try {
+    const { reservationId, extraOptions, cancellationPolicy } = req.body;
+
+    if (!reservationId)
+      return res.status(400).json({ success: false, message: "Missing reservation ID" });
+
+    const updated = await reservationServiceObj.updateReservationDetails({
+      reservationId,
+      extraOptions,
+      cancellationPolicy,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Reservation updated successfully",
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Update Reservation Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+}
+
+
+
 
   // STEP 2 — Get reservation + user details for second screen
   //  async getReservationDetails(req, res) {
@@ -184,39 +217,59 @@ class ReservationController {
   //       return res.status(500).json({ success: false, message: 'Internal Server Error' });
   //     }
   //   }
-  async createPaymentIntent(req, res) {
-    try {
-      const { reservationId } = req.body;
+///////////////
 
-      // Check reservation exists
-      const reservation = await reservationServiceObj.getReservationById(reservationId);
-      if (!reservation) {
-        return res.status(404).json({ success: false, message: 'Reservation not found' });
-      }
 
-      // Create Stripe Payment Intent for £5 (500 pence)
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: 500, // in pence
-        currency: 'gbp',
-        description: `Reservation Deposit for ID: ${reservation.id}`,
-        metadata: { reservationId: reservation.id },
-      });
 
-      // Save paymentIntentId to DB
-      await reservationServiceObj.updateReservation(reservation.id, {
-        paymentIntentId: paymentIntent.id,
-      });
 
-      return res.status(200).json({
-        success: true,
-        clientSecret: paymentIntent.client_secret,
-        message: 'Payment intent created successfully',
-      });
-    } catch (error) {
-      console.error('Stripe Payment Intent Error:', error);
-      return res.status(500).json({ success: false, message: 'Stripe Payment Error' });
-    }
+
+async createPayment(req, res){
+  try {
+    const { amount, currency, phone } = req.body;
+
+    if (!amount) return res.status(400).json({ message: "Amount is required" });
+
+    const paymentIntent = await reservationServiceObj.createPaymentIntent(amount, currency, phone);
+
+    res.status(200).json({
+      success: true,
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (err) {
+    console.error("Stripe error:", err);
+    res.status(500).json({ success: false, message: "Payment failed" });
   }
+};
+
+
+
+
+async webHook(req, res) {
+  const sig = req.headers["stripe-signature"];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, stripeWebhookSecret);
+  } catch (err) {
+    console.error("⚠️ Webhook signature verification failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  switch (event.type) {
+    case "payment_intent.succeeded":
+      console.log("✅ Payment succeeded:", event.data.object.id);
+      break;
+
+    case "payment_intent.payment_failed":
+      console.log("❌ Payment failed:", event.data.object.id);
+      break;
+
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
+  }
+
+  res.sendStatus(200);
+}
 
 
 
