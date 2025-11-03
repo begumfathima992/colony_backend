@@ -1,4 +1,4 @@
-import Reservation  from "../models/reservation.model.js";
+import Reservation from "../models/reservation.model.js";
 
 import stripe from '../config/stripe.js'
 
@@ -46,7 +46,7 @@ class ReservationService {
   //   return await Reservation.findAll({
   //     where: { date },
   //     order: [['time', 'ASC']],
-    // });
+  // });
   // }
 
   // async getUserReservations(user_id) {
@@ -79,104 +79,106 @@ class ReservationService {
 
   // services/reservation.services.js
 
-// services/reservation.services.js
+  // services/reservation.services.js
 
-///////////////////////////////////
+  ///////////////////////////////////
 
-// async patentIntend(req, res) {
-//   try {
-//     const { amount, currency = "gbp", phone } = req.body;
+  // async patentIntend(req, res) {
+  //   try {
+  //     const { amount, currency = "gbp", phone } = req.body;
 
-//     if (!amount) {
-//       return res.status(400).json({ success: false, message: "Amount is required" });
-//     }
+  //     if (!amount) {
+  //       return res.status(400).json({ success: false, message: "Amount is required" });
+  //     }
 
-//     const paymentIntent = await stripe.paymentIntents.create({
-//       amount: Math.round(amount * 100), // £10 → 1000 pence
-//       currency,
-//       metadata:{phone},
-//       automatic_payment_methods: { enabled: true },
-//     });
+  //     const paymentIntent = await stripe.paymentIntents.create({
+  //       amount: Math.round(amount * 100), // £10 → 1000 pence
+  //       currency,
+  //       metadata:{phone},
+  //       automatic_payment_methods: { enabled: true },
+  //     });
 
-//     res.status(200).json({
-//       success: true,
-//       clientSecret: paymentIntent.client_secret,
-//     });
-//   } catch (err) {
-//     console.error("Stripe Create Intent Error:", err);
-//     res.status(500).json({ success: false, message: "Payment creation failed" });
-//   }
-// };
+  //     res.status(200).json({
+  //       success: true,
+  //       clientSecret: paymentIntent.client_secret,
+  //     });
+  //   } catch (err) {
+  //     console.error("Stripe Create Intent Error:", err);
+  //     res.status(500).json({ success: false, message: "Payment creation failed" });
+  //   }
+  // };
 
-//////////////////////
-// async patentWeb(req, res) {
-//   const sig = req.headers["stripe-signature"];
+  //////////////////////
+  // async patentWeb(req, res) {
+  //   const sig = req.headers["stripe-signature"];
 
-//   let event;
-//   try {
-//     event = stripe.webhooks.constructEvent(
-//       req.body,
-//       sig,
-//       process.env.STRIPE_WEBHOOK_SECRET
-//     );
-//   } catch (err) {
-//     console.error("⚠️  Webhook signature verification failed:", err.message);
-//     return res.status(400).send(`Webhook Error: ${err.message}`);
-//   }
+  //   let event;
+  //   try {
+  //     event = stripe.webhooks.constructEvent(
+  //       req.body,
+  //       sig,
+  //       process.env.STRIPE_WEBHOOK_SECRET
+  //     );
+  //   } catch (err) {
+  //     console.error("⚠️  Webhook signature verification failed:", err.message);
+  //     return res.status(400).send(`Webhook Error: ${err.message}`);
+  //   }
 
-//   switch (event.type) {
-//     case "payment_intent.succeeded":
-//       const successPayment = event.data.object;
-//       console.log("✅ Payment succeeded:", successPayment.id);
-//       // Update reservation/payment status in DB
-//       break;
+  //   switch (event.type) {
+  //     case "payment_intent.succeeded":
+  //       const successPayment = event.data.object;
+  //       console.log("✅ Payment succeeded:", successPayment.id);
+  //       // Update reservation/payment status in DB
+  //       break;
 
-//     case "payment_intent.payment_failed":
-//       const failedPayment = event.data.object;
-//       console.log("❌ Payment failed:", failedPayment.id);
-//       // Update DB with failure
-//       break;
+  //     case "payment_intent.payment_failed":
+  //       const failedPayment = event.data.object;
+  //       console.log("❌ Payment failed:", failedPayment.id);
+  //       // Update DB with failure
+  //       break;
 
-//     default:
-//       console.log(`Unhandled event type: ${event.type}`);
-//   }
+  //     default:
+  //       console.log(`Unhandled event type: ${event.type}`);
+  //   }
 
-//   res.sendStatus(200);
-// }
-//////////////
-
-
-async  createPaymentIntent(amount, currency = "gbp", phone) {
-  return stripe.paymentIntents.create({
-    amount: Math.round(amount * 100),
-    currency,
-    metadata: { phone },
-    automatic_payment_methods: { enabled: true },
-  });
-}
-
-/////////////
+  //   res.sendStatus(200);
+  // }
+  //////////////
 
 
-
-
-async  updateReservationDetails({ reservationId, extraOptions, cancellationPolicy }) {
-  try {
-    const existing = await Reservation.findOne({
-      where: { id: reservationId },
+  async createPaymentIntent(amount, currency = "gbp", phone) {
+    return stripe.paymentIntents.create({
+      amount: Math.round(amount * 100),
+      currency,
+      metadata: { phone },
+      automatic_payment_methods: { enabled: true },
     });
-
-    if (!existing) throw new Error("Reservation not found");
-
-    return await existing.update({
-      extraOptions,
-      cancellationPolicy,
-    });
-  } catch (err) {
-    console.error("Error updating reservation details:", err);
-    throw err;
   }
-}
+
+  /////////////
+
+
+
+
+  async updateReservationDetails(req, res) {
+    try {
+      const { reservationId, extraOptions, userDietaryByParty, userDietary, userOccasion, userNotes, cancellationPolicy } = req.body;
+
+      const existing = await Reservation.findOne({
+        where: { id: reservationId },
+      });
+
+      if (!existing) throw new Error("Reservation not found");
+
+      return await existing.update({
+        extraOptions,userDietaryByParty, userDietary, userOccasion, userNotes,
+        cancellationPolicy,
+      });
+    } catch (err) {
+      console.error("Error updating reservation details:", err);
+      throw err;
+    }
+  }
 
 
 
