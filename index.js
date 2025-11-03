@@ -6,8 +6,8 @@ import reservationRoutes from './routes/reservation.routes.js';
 import cors from 'cors';
 // Routes
 import userRoutes from "./routes/user.js";
-// import User from "./models/user.model.js";
-// import Reservation from "./models/reservation.model.js";
+import User from "./models/user.model.js";
+import Reservation from "./models/reservation.model.js";
 // import faqCategoryRoutes from "./routes/faqCategory.js";
 // import faqQuestionAnswerRoutes from "./routes/faqQuestionAnswer.js";
 
@@ -61,10 +61,10 @@ app.use((req, res) => {
   }
 })();
 
-// async function sol() {
-//   let findd2 = await User?.findAll({where:{name:"aone"}, raw: true, attributes: ['id', 'membership_number', 'phone', 'name'] })
-//   console.log(findd2[0], "eeeeeeeeeeee")
-//   let findd =await Reservation?.findAll( {where:{user_id:findd2[0].id}, raw:true})
-//   console.log(findd,'findnddn')
-// }
+async function sol() {
+  let findd2 = await User?.findAll({where:{name:"aone"}, raw: true, attributes: ['id', 'membership_number', 'phone', 'name'] })
+  console.log(findd2[0], "eeeeeeeeeeee")
+  let findd =await Reservation?.findAll( {where:{user_id:findd2[0].id}, raw:true})
+  console.log(findd,'findnddn')
+}
 // sol()
