@@ -163,24 +163,38 @@ class ReservationService {
   async updateReservationDetails(req, res) {
     try {
       const { reservationId, extraOptions, userDietaryByParty, userDietary, userOccasion, userNotes, cancellationPolicy } = req.body;
-
+      // console.log(req.body, "eeeeeeeeee")
       const existing = await Reservation.findOne({
-        where: { id: reservationId },
+        where: { id: reservationId }
       });
+      // console.log(existing, "existingexisting")
 
-      if (!existing) throw new Error("Reservation not found");
+      if (!existing) {
+        return res.status(404).json({
+          success: false,
+          message: "Reservation not found",
+        });
+      }
 
-      return await existing.update({
-        extraOptions,userDietaryByParty, userDietary, userOccasion, userNotes,
+      let updateObj = await existing.update({
+        extraOptions, userDietaryByParty, userDietary, userOccasion, userNotes,
         cancellationPolicy,
+      }, { where: { id: reservationId } });
+
+      return res.status(200).json({
+        success: true,
+        message: "Reservation updated successfully",
+        data: updateObj,
       });
     } catch (err) {
-      console.error("Error updating reservation details:", err);
-      throw err;
+      console.error("Error updating reservation update:", err);
+      // throw err;
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+      });
     }
   }
-
-
 
   async deleteReservation(id) {
     return await Reservation.destroy({ where: { id } });

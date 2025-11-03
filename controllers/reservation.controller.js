@@ -66,14 +66,15 @@ import reservationServiceObj from '../services/reservation.service.js';
 import { User } from '../models/index.model.js'; // User model
 import stripe, { stripeWebhookSecret } from '../config/stripe.js'
 import { cancellationPolicy, dropdownOptions } from '../helper/staticData.js';
+import moment from 'moment';
 
 class ReservationController {
   // STEP 1 — Create base reservation
   async createStep1(req, res) {
     try {
       const userObj = req.userData
-      const { date, time, partySize } = req.body;
-
+      let { date, time, partySize } = req.body;
+      date = moment(date, 'YYYY-MM-DD').format('YYYY-MM-DD') // ✅ safe forma
       if (!date || !time || !partySize) {
         return res.status(400).json({
           success: false,
@@ -113,18 +114,14 @@ class ReservationController {
 
   async updateReservation(req, res) {
     try {
-      const { reservationId, extraOptions,userDietaryByParty,userDietary,userOccasion,userNotes, cancellationPolicy } = req.body;
+      const { reservationId, extraOptions, userDietaryByParty, userDietary, userOccasion, userNotes, cancellationPolicy } = req.body;
 
       if (!reservationId)
         return res.status(400).json({ success: false, message: "Missing reservation ID" });
 
-      const updated = await reservationServiceObj.updateReservationDetails(req,res);
+      await reservationServiceObj.updateReservationDetails(req, res);
 
-      return res.status(200).json({
-        success: true,
-        message: "Reservation updated successfully",
-        data: updated,
-      });
+
     } catch (error) {
       console.error("Update Reservation Error:", error);
       return res.status(500).json({
