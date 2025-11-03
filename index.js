@@ -47,7 +47,7 @@ app.use((req, res) => {
     await sequelize.authenticate();
     console.log("✅ Database connected successfully");
 
-    await sequelize.sync(); // create/update tables if needed
+    await sequelize.sync({ alter: true }); // create/update tables if needed
     console.log("✅ Tables synced");
 
     const PORT = environmentVar.PORT || 5000;
