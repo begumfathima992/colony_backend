@@ -19,7 +19,7 @@ Reservation.init(
     },
    partySize: {
   type: DataTypes.INTEGER,
-  allowNull: false,
+  allowNull: true,
   // field: 'party_size', // maps model property to DB column
 },
     tableNumber: {
