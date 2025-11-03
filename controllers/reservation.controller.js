@@ -113,16 +113,12 @@ class ReservationController {
 
   async updateReservation(req, res) {
     try {
-      const { reservationId, extraOptions, cancellationPolicy } = req.body;
+      const { reservationId, extraOptions,userDietaryByParty,userDietary,userOccasion,userNotes, cancellationPolicy } = req.body;
 
       if (!reservationId)
         return res.status(400).json({ success: false, message: "Missing reservation ID" });
 
-      const updated = await reservationServiceObj.updateReservationDetails({
-        reservationId,
-        extraOptions,
-        cancellationPolicy,
-      });
+      const updated = await reservationServiceObj.updateReservationDetails(req,res);
 
       return res.status(200).json({
         success: true,

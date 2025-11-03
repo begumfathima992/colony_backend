@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/dbconfig.js';
 
-class Reservation extends Model {}
+class Reservation extends Model { }
 
 Reservation.init(
   {
@@ -17,11 +17,11 @@ Reservation.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-   partySize: {
-  type: DataTypes.INTEGER,
-  allowNull: false,
-  // field: 'party_size', // maps model property to DB column
-},
+    partySize: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      // field: 'party_size', // maps model property to DB column
+    },
     tableNumber: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -53,6 +53,22 @@ Reservation.init(
       type: DataTypes.STRING,
       allowNull: true,
       unique: true,
+    },
+    userDietaryByParty: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    userDietary: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    userOccasion: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    userNotes: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     status: {
       type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'CANCELLED'),
