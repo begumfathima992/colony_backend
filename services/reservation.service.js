@@ -38,6 +38,7 @@ import stripe from '../config/stripe.js'
 
 class ReservationService {
   async createReservation(data) {
+    // console.log(data,"datttttt")
     return await Reservation.create(data);
   }
 

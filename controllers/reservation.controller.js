@@ -64,7 +64,7 @@
 // export default reservationController;
 import reservationServiceObj from '../services/reservation.service.js';
 import { User } from '../models/index.model.js'; // User model
-import stripe, {stripeWebhookSecret} from '../config/stripe.js'
+import stripe, { stripeWebhookSecret } from '../config/stripe.js'
 import { cancellationPolicy, dropdownOptions } from '../helper/staticData.js';
 
 class ReservationController {
@@ -88,10 +88,11 @@ class ReservationController {
         partySize,
         status: 'PENDING',
       });
-      delete userObj.password
-      delete userObj.access_token
-      delete userObj.createdAt
-      delete userObj.updatedAt
+      delete userObj?.password
+      delete userObj?.access_token
+      delete userObj?.createdAt
+      delete userObj?.updatedAt
+      reservation.reservationId = reservation?.id
       let obj = {
         reservation,
         userObj,
@@ -110,32 +111,32 @@ class ReservationController {
 
   // controllers/reservation.controller.js
 
-async updateReservation(req, res) {
-  try {
-    const { reservationId, extraOptions, cancellationPolicy } = req.body;
+  async updateReservation(req, res) {
+    try {
+      const { reservationId, extraOptions, cancellationPolicy } = req.body;
 
-    if (!reservationId)
-      return res.status(400).json({ success: false, message: "Missing reservation ID" });
+      if (!reservationId)
+        return res.status(400).json({ success: false, message: "Missing reservation ID" });
 
-    const updated = await reservationServiceObj.updateReservationDetails({
-      reservationId,
-      extraOptions,
-      cancellationPolicy,
-    });
+      const updated = await reservationServiceObj.updateReservationDetails({
+        reservationId,
+        extraOptions,
+        cancellationPolicy,
+      });
 
-    return res.status(200).json({
-      success: true,
-      message: "Reservation updated successfully",
-      data: updated,
-    });
-  } catch (error) {
-    console.error("Update Reservation Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-    });
+      return res.status(200).json({
+        success: true,
+        message: "Reservation updated successfully",
+        data: updated,
+      });
+    } catch (error) {
+      console.error("Update Reservation Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+      });
+    }
   }
-}
 
 
 
@@ -217,59 +218,59 @@ async updateReservation(req, res) {
   //       return res.status(500).json({ success: false, message: 'Internal Server Error' });
   //     }
   //   }
-///////////////
+  ///////////////
 
 
 
 
 
-async createPayment(req, res){
-  try {
-    const { amount, currency, phone } = req.body;
+  async createPayment(req, res) {
+    try {
+      const { amount, currency, phone } = req.body;
 
-    if (!amount) return res.status(400).json({ message: "Amount is required" });
+      if (!amount) return res.status(400).json({ message: "Amount is required" });
 
-    const paymentIntent = await reservationServiceObj.createPaymentIntent(amount, currency, phone);
+      const paymentIntent = await reservationServiceObj.createPaymentIntent(amount, currency, phone);
 
-    res.status(200).json({
-      success: true,
-      clientSecret: paymentIntent.client_secret,
-    });
-  } catch (err) {
-    console.error("Stripe error:", err);
-    res.status(500).json({ success: false, message: "Payment failed" });
+      res.status(200).json({
+        success: true,
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (err) {
+      console.error("Stripe error:", err);
+      res.status(500).json({ success: false, message: "Payment failed" });
+    }
+  };
+
+
+
+
+  async webHook(req, res) {
+    const sig = req.headers["stripe-signature"];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, stripeWebhookSecret);
+    } catch (err) {
+      console.error("⚠️ Webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    switch (event.type) {
+      case "payment_intent.succeeded":
+        console.log("✅ Payment succeeded:", event.data.object.id);
+        break;
+
+      case "payment_intent.payment_failed":
+        console.log("❌ Payment failed:", event.data.object.id);
+        break;
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    res.sendStatus(200);
   }
-};
-
-
-
-
-async webHook(req, res) {
-  const sig = req.headers["stripe-signature"];
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, stripeWebhookSecret);
-  } catch (err) {
-    console.error("⚠️ Webhook signature verification failed:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  switch (event.type) {
-    case "payment_intent.succeeded":
-      console.log("✅ Payment succeeded:", event.data.object.id);
-      break;
-
-    case "payment_intent.payment_failed":
-      console.log("❌ Payment failed:", event.data.object.id);
-      break;
-
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
-  }
-
-  res.sendStatus(200);
-}
 
 
 
