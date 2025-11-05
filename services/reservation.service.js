@@ -1,6 +1,7 @@
 import Reservation from "../models/reservation.model.js";
 
 import stripe, { stripeWebhookSecret } from '../config/stripe.js'
+import env from "../config/environmentVariables.js";
 
 
 // import { Reservation } from '../models/index.model.js'; // central models import
@@ -156,22 +157,30 @@ class ReservationService {
   //   });
   // }
 
-  /////////////---
+  /////////////--- reservation ho pehle 
   async createPaymentIntent(req, res) {
     try {
       const userData = req.userData
-    //  userData.id = 36
+      //  userData.id = 36
 
       let { amount, reservationId, } = req.body
+
       const findOne = await Reservation.findOne({
         where: {
           id: reservationId,
           user_id: userData?.id
         },
         raw: true
-      })
-      // console.log(findOne,userData.id,reservationId,"=========>>>>>>")
+      });
+
+
+      let staticCharge = env.ZIGGY_PER_PERSON_FEE
+      let totalFee = Number(staticCharge) * Number(findOne?.partySize)
+
+      // console.log(totalFee, findOne, userData.id, reservationId, "=========>>>>>>")
+      // return
       if (!findOne) {
+
         return res.status(404).json({
           status: false,
           message: "Reservation not found"
@@ -186,8 +195,8 @@ class ReservationService {
       );
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount,
-        currency: 'aed',
+        amount: totalFee,
+        currency: 'eur',
         customer: customer.id,
         automatic_payment_methods: { enabled: true },
       });
@@ -203,7 +212,8 @@ class ReservationService {
         clientSecret: paymentIntent.client_secret,
         ephemeralKey: ephemeralKey.secret
       }
-      await Reservation?.update(obj, { where: { user_id: userData?.id, reservationId } })
+
+      await Reservation?.update(obj, { where: { user_id: userData?.id,id: reservationId } })
 
       res.json({
         clientSecret: paymentIntent.client_secret,
