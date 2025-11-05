@@ -17,11 +17,11 @@ Reservation.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-   partySize: {
-  type: DataTypes.INTEGER,
-  allowNull: true,
-  // field: 'party_size', // maps model property to DB column
-},
+    partySize: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      // field: 'party_size', // maps model property to DB column
+    },
     tableNumber: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -71,16 +71,28 @@ Reservation.init(
       allowNull: true,
     },
     stripeCustomerId: {
-  type: DataTypes.STRING,
-  allowNull: true,
-},
-stripePaymentMethodId: {
-  type: DataTypes.STRING,
-  allowNull: true,
-},
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    stripePaymentMethodId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     status: {
       type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'CANCELLED'),
       defaultValue: 'PENDING',
+    },
+    customer_id: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    clientSecret: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    ephemeralKey: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
   },
   {

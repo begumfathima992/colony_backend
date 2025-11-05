@@ -217,62 +217,65 @@ class ReservationController {
 
 
 
-//   async createPayment(req, res) {
-//     try {
-//       const { amount, currency, phone } = req.body;
+  //   async createPayment(req, res) {
+  //     try {
+  //       const { amount, currency, phone } = req.body;
 
-//       if (!amount) return res.status(400).json({ message: "Amount is required" });
+  //       if (!amount) return res.status(400).json({ message: "Amount is required" });
 
-//       const paymentIntent = await reservationServiceObj.createPaymentIntent(amount, currency, phone);
-// console.log(paymentIntent,"paymentIntentpaymentIntentpaymentIntent")
-//       res.status(200).json({
-//         success: true,
-//         clientSecret: paymentIntent.client_secret,
-//       //   ephemeralKey: ephemeralKey.secret,
-//       // customer: customer.id,
+  //       const paymentIntent = await reservationServiceObj.createPaymentIntent(amount, currency, phone);
+  // console.log(paymentIntent,"paymentIntentpaymentIntentpaymentIntent")
+  //       res.status(200).json({
+  //         success: true,
+  //         clientSecret: paymentIntent.client_secret,
+  //       //   ephemeralKey: ephemeralKey.secret,
+  //       // customer: customer.id,
 
-//       });
-//     } catch (err) {
-//       console.error("Stripe error:", err);
-//       res.status(500).json({ success: false, message: "Payment failed" });
-//     }
-//   };
+  //       });
+  //     } catch (err) {
+  //       console.error("Stripe error:", err);
+  //       res.status(500).json({ success: false, message: "Payment failed" });
+  //     }
+  //   };
 
 
-///////
-async createPayment(req, res)  {
-  try {
-    const { amount,reservationId } = req.body;
+  ///////
+  async createPayment(req, res) {
+    try {
+      const { amount, reservationId } = req.body;
 
-    const customer = await stripe.customers.create();
-console.log('Customer created:', customer.id);
-    const ephemeralKey = await stripe.ephemeralKeys.create(
-      { customer: customer.id },
-      { apiVersion: '2024-06-20' } // ✅ REQUIRED
-    );
+      const customer = await stripe.customers.create();
+      console.log('Customer created:', customer.id);
+      const ephemeralKey = await stripe.ephemeralKeys.create(
+        { customer: customer.id },
+        { apiVersion: '2024-06-20' } // ✅ REQUIRED
+      );
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'aed',
-      customer: customer.id,
-      automatic_payment_methods: { enabled: true },
-    });
-    const obj={
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: 'aed',
+        customer: customer.id,
+        automatic_payment_methods: { enabled: true },
+      });
+      const obj = {
+        customer_id: customer.id, reservationId,
+        clientSecret: paymentIntent.client_secret,
+        ephemeralKey: ephemeralKey.secret,
+      }
 
-   customer
-
+      req.obj = obj
+      await reservationServiceObj.createPaymentIntent(req, res)
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        ephemeralKey: ephemeralKey.secret,
+        customer: customer.id,
+      });
+      return
+    } catch (err) {
+      console.error('Stripe Error:', err);
+      res.status(500).json({ error: err.message });
     }
-
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      ephemeralKey: ephemeralKey.secret,
-      customer: customer.id,
-    });
-  } catch (err) {
-    console.error('Stripe Error:', err);
-    res.status(500).json({ error: err.message });
-  }
-};
+  };
 
 
 
@@ -303,26 +306,26 @@ console.log('Customer created:', customer.id);
     res.sendStatus(200);
     return;
   }
-   // =====================================================
+  // =====================================================
   // 1️⃣ Create SetupIntent — collect card without charging
   // =====================================================
   async createSetupIntent(req, res) {
     try {
-      const { setupIntent, customer } = await reservationServiceObj.createSetupIntent(req,res);
+      const { setupIntent, customer } = await reservationServiceObj.createSetupIntent(req, res);
 
       res.status(200).json({
         success: true,
         clientSecret: setupIntent.client_secret,
         customer: customer.id,
       }
-    );
-    return;
+      );
+      return;
     } catch (err) {
       console.error("SetupIntent Error:", err);
       res.status(500).json({ success: false, message: "Failed to create SetupIntent" });
       return;
     }
-    
+
   }
 
   // =====================================================

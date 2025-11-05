@@ -157,81 +157,83 @@ class ReservationService {
   // }
 
   /////////////
-  async createPaymentIntent(req,res,obj){
-    try{
-      const userData=req.userData
-      
-      const findOne= await Reservation.findOne({
-    where:{
-      reservationId:obj.reservationId,
-      user:userData?.user_id
-    }
-   })
-  //  if(!findOne){
-  //   return res.status(400).json({
-  //     status:false,
-  //     message:"patent not found"
-  //   })
-  //  }
-    }
-    catch(err){
-console.error(err,'create patent error')
-    }
+  async createPaymentIntent(req, res) {
+    try {
+      const userData = req.userData
+      let { customer_id, reservationId, clientSecret, ephemeralKey } = req.obj
+      const findOne = await Reservation.findOne({
+        where: {
+          reservationId: reservationId,
+          user_id: userData?.id
+        }, raw: true
+      })
+      if (!findOne) {
+        return res.status(404).json({
+          status: false,
+          message: "Reservation not found"
+        })
+      }
 
-   
-
+      let obj = {
+        customer_id, clientSecret, ephemeralKey
+      }
+      await Reservation?.update(obj, { where: { user_id: userData?.id, reservationId } })
+    } catch (err) {
+      console.error(err, 'create patent error')
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+    }
   }
 
 
 
 
-async updateReservationDetails(req, res) {
-  try {
-    const {
-      reservationId,
-      extraOptions,
-      userDietaryByParty,
-      userDietary,
-      userOccasion,
-      userNotes,
-      cancellationPolicy
-    } = req.body;
+  async updateReservationDetails(req, res) {
+    try {
+      const {
+        reservationId,
+        extraOptions,
+        userDietaryByParty,
+        userDietary,
+        userOccasion,
+        userNotes,
+        cancellationPolicy
+      } = req.body;
 
-    const existing = await Reservation.findByPk(reservationId);
+      const existing = await Reservation.findByPk(reservationId);
 
-    if (!existing) {
-      return res.status(404).json({
+      if (!existing) {
+        return res.status(404).json({
+          success: false,
+          message: "Reservation not found",
+        });
+      }
+
+      const updated = await existing.update({
+        extraOptions,
+        userDietaryByParty,
+        userDietary,
+        userOccasion,
+        userNotes,
+        cancellationPolicy,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Reservation updated successfully",
+        data: updated,
+      });
+    } catch (err) {
+      console.error("Error updating reservation:", err);
+      return res.status(500).json({
         success: false,
-        message: "Reservation not found",
+        message: "Internal Server Error",
       });
     }
-
-    const updated = await existing.update({
-      extraOptions,
-      userDietaryByParty,
-      userDietary,
-      userOccasion,
-      userNotes,
-      cancellationPolicy,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Reservation updated successfully",
-      data: updated,
-    });
-  } catch (err) {
-    console.error("Error updating reservation:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-    });
   }
-}
   // =====================================================
   // 1️⃣ Create SetupIntent — user enters card details
   // =====================================================
-  async createSetupIntent(req,res) {
+  async createSetupIntent(req, res) {
     const customer = await stripe.customers.create();
 
     const setupIntent = await stripe.setupIntents.create({
