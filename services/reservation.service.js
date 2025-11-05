@@ -160,7 +160,7 @@ class ReservationService {
   async createPaymentIntent(req, res) {
     try {
       const userData = req.userData
-      userData.id = 36
+    //  userData.id = 36
 
       let { amount, reservationId, } = req.body
       const findOne = await Reservation.findOne({
