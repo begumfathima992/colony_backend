@@ -242,38 +242,11 @@ class ReservationController {
   ///////
   async createPayment(req, res) {
     try {
-      const { amount, reservationId } = req.body;
-
-      const customer = await stripe.customers.create();
-      console.log('Customer created:', customer.id);
-      const ephemeralKey = await stripe.ephemeralKeys.create(
-        { customer: customer.id },
-        { apiVersion: '2024-06-20' } // ✅ REQUIRED
-      );
-
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount,
-        currency: 'aed',
-        customer: customer.id,
-        automatic_payment_methods: { enabled: true },
-      });
-      const obj = {
-        customer_id: customer.id, reservationId,
-        clientSecret: paymentIntent.client_secret,
-        ephemeralKey: ephemeralKey.secret,
-      }
-
-      req.obj = obj
       await reservationServiceObj.createPaymentIntent(req, res)
-      res.json({
-        clientSecret: paymentIntent.client_secret,
-        ephemeralKey: ephemeralKey.secret,
-        customer: customer.id,
-      });
-      return
     } catch (err) {
       console.error('Stripe Error:', err);
       res.status(500).json({ error: err.message });
+      return
     }
   };
 

@@ -1,6 +1,6 @@
 import Reservation from "../models/reservation.model.js";
 
-import stripe from '../config/stripe.js'
+import stripe, { stripeWebhookSecret } from '../config/stripe.js'
 
 
 // import { Reservation } from '../models/index.model.js'; // central models import
@@ -160,29 +160,58 @@ class ReservationService {
   async createPaymentIntent(req, res) {
     try {
       const userData = req.userData
-      userData.id=36
-      let { customer_id, reservationId, clientSecret, ephemeralKey } = req.obj
+      userData.id = 36
 
+      let { amount, reservationId, } = req.body
       const findOne = await Reservation.findOne({
         where: {
           id: reservationId,
-           user_id: userData?.id
-        }, 
-        raw:true
+          user_id: userData?.id
+        },
+        raw: true
       })
-      console.log(findOne,userData.id,reservationId,"=========>>>>>>")
+      // console.log(findOne,userData.id,reservationId,"=========>>>>>>")
       if (!findOne) {
         return res.status(404).json({
           status: false,
           message: "Reservation not found"
         })
       }
-      return
+
+      const customer = await stripe.customers.create();
+      console.log('Customer created:', customer.id);
+      const ephemeralKey = await stripe.ephemeralKeys.create(
+        { customer: customer.id },
+        { apiVersion: '2024-06-20' } // ✅ REQUIRED
+      );
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: 'aed',
+        customer: customer.id,
+        automatic_payment_methods: { enabled: true },
+      });
+      // const obj = {
+      //   customer_id: customer.id,
+      //   clientSecret: paymentIntent.client_secret,
+      //   ephemeralKey: ephemeralKey.secret,
+      // }
+
 
       let obj = {
-        customer_id, clientSecret, ephemeralKey
+        customer_id: customer?.id,
+        clientSecret: paymentIntent.client_secret,
+        ephemeralKey: ephemeralKey.secret
       }
       await Reservation?.update(obj, { where: { user_id: userData?.id, reservationId } })
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        ephemeralKey: ephemeralKey.secret,
+        customer: customer.id,
+      });
+      return
+
     } catch (err) {
       console.error(err, 'create patent error')
       return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
