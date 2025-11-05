@@ -70,6 +70,14 @@ Reservation.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    stripeCustomerId: {
+  type: DataTypes.STRING,
+  allowNull: true,
+},
+stripePaymentMethodId: {
+  type: DataTypes.STRING,
+  allowNull: true,
+},
     status: {
       type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'CANCELLED'),
       defaultValue: 'PENDING',

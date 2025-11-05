@@ -217,24 +217,57 @@ class ReservationController {
 
 
 
-  async createPayment(req, res) {
-    try {
-      const { amount, currency, phone } = req.body;
+//   async createPayment(req, res) {
+//     try {
+//       const { amount, currency, phone } = req.body;
 
-      if (!amount) return res.status(400).json({ message: "Amount is required" });
+//       if (!amount) return res.status(400).json({ message: "Amount is required" });
 
-      const paymentIntent = await reservationServiceObj.createPaymentIntent(amount, currency, phone);
+//       const paymentIntent = await reservationServiceObj.createPaymentIntent(amount, currency, phone);
+// console.log(paymentIntent,"paymentIntentpaymentIntentpaymentIntent")
+//       res.status(200).json({
+//         success: true,
+//         clientSecret: paymentIntent.client_secret,
+//       //   ephemeralKey: ephemeralKey.secret,
+//       // customer: customer.id,
 
-      res.status(200).json({
-        success: true,
-        clientSecret: paymentIntent.client_secret,
-      });
-    } catch (err) {
-      console.error("Stripe error:", err);
-      res.status(500).json({ success: false, message: "Payment failed" });
-    }
-  };
+//       });
+//     } catch (err) {
+//       console.error("Stripe error:", err);
+//       res.status(500).json({ success: false, message: "Payment failed" });
+//     }
+//   };
 
+
+///////
+async createPayment(req, res)  {
+  try {
+    const { amount } = req.body;
+
+    const customer = await stripe.customers.create();
+console.log('Customer created:', customer.id);
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: customer.id },
+      { apiVersion: '2024-06-20' } // ✅ REQUIRED
+    );
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'aed',
+      customer: customer.id,
+      automatic_payment_methods: { enabled: true },
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      ephemeralKey: ephemeralKey.secret,
+      customer: customer.id,
+    });
+  } catch (err) {
+    console.error('Stripe Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
 
 
 
@@ -263,6 +296,70 @@ class ReservationController {
     }
 
     res.sendStatus(200);
+  }
+   // =====================================================
+  // 1️⃣ Create SetupIntent — collect card without charging
+  // =====================================================
+  async createSetupIntent(req, res) {
+    try {
+      const { setupIntent, customer } = await reservationServiceObj.createSetupIntent();
+
+      res.status(200).json({
+        success: true,
+        clientSecret: setupIntent.client_secret,
+        customer: customer.id,
+      });
+    } catch (err) {
+      console.error("SetupIntent Error:", err);
+      res.status(500).json({ success: false, message: "Failed to create SetupIntent" });
+    }
+  }
+
+  // =====================================================
+  // 2️⃣ Store card details with reservation
+  // =====================================================
+  async storeCard(req, res) {
+    try {
+      const { reservationId, stripeCustomerId, stripePaymentMethodId } = req.body;
+
+      if (!reservationId || !stripeCustomerId || !stripePaymentMethodId) {
+        return res.status(400).json({ success: false, message: "Missing required fields" });
+      }
+
+      await reservationServiceObj.storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId);
+
+      res.status(200).json({
+        success: true,
+        message: "Card details stored successfully",
+      });
+    } catch (err) {
+      console.error("Store Card Error:", err);
+      res.status(500).json({ success: false, message: "Failed to store card details" });
+    }
+  }
+
+  // =====================================================
+  // 3️⃣ Charge £12 late cancellation / no-show fee
+  // =====================================================
+  async chargeLateFee(req, res) {
+    try {
+      const { reservationId } = req.body;
+
+      if (!reservationId) {
+        return res.status(400).json({ success: false, message: "Reservation ID is required" });
+      }
+
+      const paymentIntent = await reservationServiceObj.chargeLateFee(reservationId);
+
+      res.status(200).json({
+        success: true,
+        message: "Late cancellation fee charged successfully",
+        paymentIntent,
+      });
+    } catch (err) {
+      console.error("Charge Late Fee Error:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
   }
 
 

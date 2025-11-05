@@ -18,6 +18,11 @@ router.post("/create-payment-intent", authorize, reservationController.createPay
 // **Webhook route should NOT use authorize**
 router.post("/webhook", express.raw({ type: 'application/json' }), reservationController.webHook);
 
+
+router.post("/create-setup-intent", reservationController.createSetupIntent);
+router.post("/store-card", reservationController.storeCard);
+router.post("/charge-late-fee", reservationController.chargeLateFee);
+
 // ----------------------
 // Optional Step 2 routes
 // ----------------------
