@@ -156,7 +156,7 @@ class ReservationService {
   //   });
   // }
 
-  /////////////
+  /////////////---
   async createPaymentIntent(req, res) {
     try {
       const userData = req.userData
