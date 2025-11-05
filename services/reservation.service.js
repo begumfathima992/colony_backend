@@ -40,6 +40,7 @@ class ReservationService {
   async createReservation(data) {
     // console.log(data,"datttttt")
     return await Reservation.create(data);
+
   }
 
   // async getReservationsByDate(date) {
@@ -146,16 +147,40 @@ class ReservationService {
   //////////////
 
 
-  async createPaymentIntent(amount, currency = "gbp", phone) {
-    return stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
-      currency,
-      metadata: { phone },
-      automatic_payment_methods: { enabled: true },
-    });
-  }
+  // async createPaymentIntent(amount, currency = "gbp", phone) {
+  //   return stripe.paymentIntents.create({
+  //     amount: Math.round(amount * 100),
+  //     currency,
+  //     metadata: { phone },
+  //     automatic_payment_methods: { enabled: true },
+  //   });
+  // }
 
   /////////////
+  async createPaymentIntent(req,res,obj){
+    try{
+      const userData=req.userData
+      
+      const findOne= await Reservation.findOne({
+    where:{
+      reservationId:obj.reservationId,
+      user:userData?.user_id
+    }
+   })
+  //  if(!findOne){
+  //   return res.status(400).json({
+  //     status:false,
+  //     message:"patent not found"
+  //   })
+  //  }
+    }
+    catch(err){
+console.error(err,'create patent error')
+    }
+
+   
+
+  }
 
 
 
@@ -206,7 +231,7 @@ async updateReservationDetails(req, res) {
   // =====================================================
   // 1️⃣ Create SetupIntent — user enters card details
   // =====================================================
-  async createSetupIntent() {
+  async createSetupIntent(req,res) {
     const customer = await stripe.customers.create();
 
     const setupIntent = await stripe.setupIntents.create({

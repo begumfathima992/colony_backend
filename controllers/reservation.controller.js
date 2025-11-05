@@ -242,7 +242,7 @@ class ReservationController {
 ///////
 async createPayment(req, res)  {
   try {
-    const { amount } = req.body;
+    const { amount,reservationId } = req.body;
 
     const customer = await stripe.customers.create();
 console.log('Customer created:', customer.id);
@@ -257,6 +257,11 @@ console.log('Customer created:', customer.id);
       customer: customer.id,
       automatic_payment_methods: { enabled: true },
     });
+    const obj={
+
+   customer
+
+    }
 
     res.json({
       clientSecret: paymentIntent.client_secret,
@@ -296,23 +301,28 @@ console.log('Customer created:', customer.id);
     }
 
     res.sendStatus(200);
+    return;
   }
    // =====================================================
   // 1️⃣ Create SetupIntent — collect card without charging
   // =====================================================
   async createSetupIntent(req, res) {
     try {
-      const { setupIntent, customer } = await reservationServiceObj.createSetupIntent();
+      const { setupIntent, customer } = await reservationServiceObj.createSetupIntent(req,res);
 
       res.status(200).json({
         success: true,
         clientSecret: setupIntent.client_secret,
         customer: customer.id,
-      });
+      }
+    );
+    return;
     } catch (err) {
       console.error("SetupIntent Error:", err);
       res.status(500).json({ success: false, message: "Failed to create SetupIntent" });
+      return;
     }
+    
   }
 
   // =====================================================
