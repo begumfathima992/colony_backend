@@ -160,19 +160,24 @@ class ReservationService {
   async createPaymentIntent(req, res) {
     try {
       const userData = req.userData
+      userData.id=36
       let { customer_id, reservationId, clientSecret, ephemeralKey } = req.obj
+
       const findOne = await Reservation.findOne({
         where: {
-          reservationId: reservationId,
-          user_id: userData?.id
-        }, raw: true
+          id: reservationId,
+           user_id: userData?.id
+        }, 
+        raw:true
       })
+      console.log(findOne,userData.id,reservationId,"=========>>>>>>")
       if (!findOne) {
         return res.status(404).json({
           status: false,
           message: "Reservation not found"
         })
       }
+      return
 
       let obj = {
         customer_id, clientSecret, ephemeralKey

@@ -5,6 +5,8 @@ class Reservation extends Model { }
 
 Reservation.init(
   {
+     id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true, unique: true },
+   
     user_id: {
       type: DataTypes.BIGINT,
       allowNull: false,
