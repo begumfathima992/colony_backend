@@ -176,6 +176,8 @@ class ReservationService {
 
       let staticCharge = env.ZIGGY_PER_PERSON_FEE
       let totalFee = Number(staticCharge) * Number(findOne?.partySize)
+      
+      totalFee = amount// ise commment kr dena
 
       // console.log(totalFee, findOne, userData.id, reservationId, "=========>>>>>>")
       // return
@@ -213,7 +215,7 @@ class ReservationService {
         ephemeralKey: ephemeralKey.secret
       }
 
-      await Reservation?.update(obj, { where: { user_id: userData?.id,id: reservationId } })
+      await Reservation?.update(obj, { where: { user_id: userData?.id, id: reservationId } })
 
       res.json({
         clientSecret: paymentIntent.client_secret,
@@ -342,6 +344,41 @@ class ReservationService {
 
   async deleteReservation(id) {
     return await Reservation.destroy({ where: { id } });
+  }
+
+  async save_card_details(req, res) {
+    try {
+      let {
+        reservationId,
+        phone,
+        cardDetails,
+        isAcceptCancellation
+      } = req.body
+
+      let userData = req.userData
+
+      let findObj = await Reservation.findOne({ where: { user_id: userData?.id, id: reservationId }, raw: true })
+      if (!findObj) {
+        return res.status(404).json({ message: 'Reservation data not found', statusCode: 404, success: false })
+      }
+      let saveObj = {
+        cardDetails, isAcceptCancellation
+      }
+      await Reservation?.update(saveObj, { where: { id: reservationId, user_id: userData?.id } })
+      return res.status(200).json({ message: "Details saved success", statusCode: 200, success: true })
+
+    } catch (error) {
+      console.log(error, "save_card_Detals")
+      return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+    }
+  }
+
+  async cancellation_reservation(req, res) {
+    try {
+
+    } catch (error) {
+      return res.status(500).json({ message: error?.message, statusCode })
+    }
   }
 }
 

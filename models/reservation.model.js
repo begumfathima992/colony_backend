@@ -5,8 +5,8 @@ class Reservation extends Model { }
 
 Reservation.init(
   {
-     id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true, unique: true },
-   
+    id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true, unique: true },
+
     user_id: {
       type: DataTypes.BIGINT,
       allowNull: false,
@@ -96,6 +96,15 @@ Reservation.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    cardDetails: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    isAcceptCancellation: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true
+    },
+
   },
   {
     sequelize,

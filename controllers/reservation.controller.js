@@ -1,4 +1,9 @@
 // import reservationServiceObj from '../services/reservation.service.js';
+const options = {
+  abortEarly: false,
+  allowUnknown: true,
+  stripUnknown: true,
+};
 
 // class ReservationController {
 //   async create(req, res) {
@@ -67,6 +72,7 @@ import { User } from '../models/index.model.js'; // User model
 import stripe, { stripeWebhookSecret } from '../config/stripe.js'
 import { cancellationPolicy, dropdownOptions } from '../helper/staticData.js';
 import moment from 'moment';
+import { cancellation_reservation, cart_detail_save } from '../helper/validator/reservation.js';
 
 class ReservationController {
   // STEP 1 — Create base reservation
@@ -348,7 +354,31 @@ class ReservationController {
     }
   }
 
+  async save_card_details(req, res) {
+    try {
+      let { error } = cart_detail_save.validate(req.body, options)
+      // console.log(error, "Eeeeeeeeeeeee")
+      if (error) {
+        return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
+      }
+      await reservationServiceObj?.save_card_details(req, res)
+    } catch (error) {
+      return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+    }
+  }
 
+  async cancellation_reservation(req, res) {
+    try {
+      let { error } = cancellation_reservation.validate(req.body, options)
+      // console.log(error, "Eeeeeeeeeeeee")
+      if (error) {
+        return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
+      }
+      await reservationServiceObj?.cancellation_reservation(req, res)
+    } catch (error) {
+      return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+    }
+  }
 
 }
 

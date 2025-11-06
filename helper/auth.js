@@ -84,15 +84,15 @@ export const authorize = async (req, res, next) => {
       where: { id: payload.id },
       raw: true,
     });
-
-    // if (!findUser || !findUser.access_token) {
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: "Please login to continue...",
-    //     statusCode: 401,
-    //   });
-    // }
     // console.log(findUser, 'efwfwef')
+
+    if (!findUser) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login to continue...",
+        statusCode: 401,
+      });
+    }
     req.userData = findUser;
     req.id = findUser.id;
 
