@@ -176,7 +176,7 @@ class ReservationService {
 
       let staticCharge = env.ZIGGY_PER_PERSON_FEE
       let totalFee = Number(staticCharge) * Number(findOne?.partySize)
-      
+
       totalFee = amount// ise commment kr dena
 
       // console.log(totalFee, findOne, userData.id, reservationId, "=========>>>>>>")
@@ -375,7 +375,9 @@ class ReservationService {
 
   async cancellation_reservation(req, res) {
     try {
-
+      let { reservationId, cancel } = req.body
+      await Reservation?.update({ reservationCancel: cancel }, { where: { id: reservationId } })
+      return res.status(200).json({ message: "Reservation Cancelled", status: 200 })
     } catch (error) {
       return res.status(500).json({ message: error?.message, statusCode })
     }

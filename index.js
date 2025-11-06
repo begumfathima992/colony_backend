@@ -68,4 +68,4 @@ async function sol() {
   let findd = await Reservation?.findOne({ where: { id: 26 }, raw: true })
   console.log(findd, 'findnddn')
 }
-sol()
+// sol()

@@ -104,7 +104,10 @@ Reservation.init(
       type: DataTypes.BOOLEAN,
       allowNull: true
     },
-
+    reservationCancel: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    }
   },
   {
     sequelize,
