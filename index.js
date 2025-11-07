@@ -62,10 +62,11 @@ app.use((req, res) => {
 })();
 
 async function sol() {
-  let findd2 = await User?.findAll({ where: { name: "aone" }, raw: true, attributes: ['id', 'membership_number', 'phone', 'name'] })
-  console.log(findd2[0], "eeeeeeeeeeee")
+  // let findd2 = await User?.findAll({ where: { name: "aone" }, raw: true, attributes: ['id', 'membership_number', 'phone', 'name'] })
+  // console.log(findd2[0], "eeeeeeeeeeee")
   // let findd =await Reservation?.findAll( {where:{user_id:findd2[0].id}, raw:true})
-  let findd = await Reservation?.findOne({ where: { id: 26 }, raw: true })
+  // let findd = await Reservation?.findOne({ where: { id: 26 }, raw: true })
+  let findd = await Reservation?.findAll({raw: true })
   console.log(findd, 'findnddn')
 }
 // sol()
