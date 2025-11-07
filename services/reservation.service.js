@@ -382,6 +382,16 @@ class ReservationService {
       return res.status(500).json({ message: error?.message, statusCode })
     }
   }
+
+  async fetch_all_reservation(req, res) {
+    try {
+      let userObj = req.userData
+      let get = await Reservation?.findAll({ where: { user_id: userObj.id }, raw: true })
+      return res.status(200).json({ message: "Reservation fetched", data: get, status: 200 })
+    } catch (error) {
+      return res.status(500).json({ message: error?.message, statusCode })
+    }
+  }
 }
 
 const reservationServiceObj = new ReservationService();
