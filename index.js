@@ -8,6 +8,7 @@ import cors from 'cors';
 import userRoutes from "./routes/user.js";
 import User from "./models/user.model.js";
 import Reservation from "./models/reservation.model.js";
+import EventRoutes from "./routes/event.js";
 // import faqCategoryRoutes from "./routes/faqCategory.js";
 // import faqQuestionAnswerRoutes from "./routes/faqQuestionAnswer.js";
 
@@ -35,7 +36,7 @@ app.get("/health", (req, res) => {
 // Main routes
 app.use("/user", userRoutes);
 app.use('/reservations', reservationRoutes);
-// app.use("/faq_category", faqCategoryRoutes);
+app.use("/event", EventRoutes);
 // app.use("/faq_question_answer", faqQuestionAnswerRoutes);
 
 // Default fallback route (404 handler)
@@ -62,8 +63,8 @@ app.use((req, res) => {
 })();
 
 async function sol() {
-  // let findd2 = await User?.findAll({ where: { name: "aone" }, raw: true, attributes: ['id', 'membership_number', 'phone', 'name'] })
-  // console.log(findd2[0], "eeeeeeeeeeee")
+  let findd2 = await User?.findAll({ where: { name: "aone" }, raw: true, attributes: ['id', 'membership_number', 'phone', 'name'] })
+  console.log(findd2[0], "eeeeeeeeeeee")
   // let findd =await Reservation?.findAll( {where:{user_id:findd2[0].id}, raw:true})
   // let findd = await Reservation?.findOne({ where: { id: 26 }, raw: true })
   let findd = await Reservation?.findAll({raw: true })
