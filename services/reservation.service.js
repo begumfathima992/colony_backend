@@ -382,6 +382,30 @@ class ReservationService {
       return res.status(500).json({ message: error?.message, statusCode })
     }
   }
+
+  async fetch_all_reservation(req, res) {
+    try {
+      let userObj = req.userData
+      let get = await Reservation?.findAll({ where: { user_id: userObj.id }, raw: true })
+
+      for (let i = 0; i < get.length; i++) {
+        if (i = 0) {
+          get[i].isPaid = true
+          get[i].cancellationFee = 10
+          get[i].canCancel = true
+
+        } else {
+
+          get[i].isPaid = false
+          get[i].cancellationFee = 10
+          get[i].canCancel = false
+        }
+      }
+      return res.status(200).json({ message: "Reservation fetched", data: get, status: 200 })
+    } catch (error) {
+      return res.status(500).json({ message: error?.message, statusCode })
+    }
+  }
 }
 
 const reservationServiceObj = new ReservationService();

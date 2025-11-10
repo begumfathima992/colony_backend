@@ -410,6 +410,19 @@ console.log('Customer created:', customer.id);
     }
   }
 
+  async fetch_all_reservation(req, res) {
+    try {
+      // let { error } = cancellation_reservation.validate(req.body, options)
+      // console.log(error, "Eeeeeeeeeeeee")
+      // if (error) {
+      //   return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
+      // }
+      await reservationServiceObj?.fetch_all_reservation(req, res)
+    } catch (error) {
+      return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+    }
+  }
+
 }
 
 const reservationController = new ReservationController();
