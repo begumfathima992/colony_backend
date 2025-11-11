@@ -389,7 +389,7 @@ class ReservationService {
       let get = await Reservation?.findAll({ where: { user_id: userObj.id }, raw: true })
 
       for (let i = 0; i < get.length; i++) {
-        if (i = 0) {
+        if (i == 0) {
           get[i].isPaid = true
           get[i].cancellationFee = 10
           get[i].canCancel = true
@@ -403,6 +403,7 @@ class ReservationService {
       }
       return res.status(200).json({ message: "Reservation fetched", data: get, status: 200 })
     } catch (error) {
+      console.log(error,"====>get error")
       return res.status(500).json({ message: error?.message, statusCode })
     }
   }
