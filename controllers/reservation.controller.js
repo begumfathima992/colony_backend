@@ -386,8 +386,9 @@ console.log('Customer created:', customer.id);
 
   async save_card_details(req, res) {
     try {
+      console.log(req.body,"======>body")
       let { error } = cart_detail_save.validate(req.body, options)
-      // console.log(error, "Eeeeeeeeeeeee")
+      console.log(error, "Eeeeeeeeeeeee",req.body,"bodyyy")
       if (error) {
         return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
       }
@@ -399,8 +400,9 @@ console.log('Customer created:', customer.id);
 
   async cancellation_reservation(req, res) {
     try {
+        console.log(req.body, "bodyy====Eeeeeeeeeeeee")
       let { error } = cancellation_reservation.validate(req.body, options)
-      // console.log(error, "Eeeeeeeeeeeee")
+      console.log(error, "Eeeeeeeeeeeee")
       if (error) {
         return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
       }
@@ -412,11 +414,7 @@ console.log('Customer created:', customer.id);
 
   async fetch_all_reservation(req, res) {
     try {
-      // let { error } = cancellation_reservation.validate(req.body, options)
-      // console.log(error, "Eeeeeeeeeeeee")
-      // if (error) {
-      //   return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
-      // }
+    
       await reservationServiceObj?.fetch_all_reservation(req, res)
     } catch (error) {
       return res.status(500).json({ message: error?.message, statusCode: 500, success: false })

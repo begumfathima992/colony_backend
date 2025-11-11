@@ -2,18 +2,18 @@ import Joi from 'joi'
 
 
 export const cart_detail_save = Joi.object({
-    reservationId: Joi.string().required().label("reservation"),
+    reservationId: Joi.number().required().label("reservation"),
     cardDetails: Joi.object({
-        cardNumber: Joi.number().required().label('cardNumber'),
+        cardNumber: Joi.string().required().label('cardNumber'),
         cardExpiry: Joi.string().required().label('cardExpiry'),
-        CVV: Joi.number().required().label("CVV")
+        CVV: Joi.string().required().label("CVV")
     }).required().label('cardDetails'),
     isAcceptCancellation: Joi.boolean().label("is Accept Cancellation")
 })
 
 
 export const cancellation_reservation = Joi.object({
-    reservationId: Joi.string().required().label("reservation"),
+    reservationId: Joi.number().required().label("reservation"),
     cancel: Joi.boolean().label("cancel")
 })
 
