@@ -5,10 +5,12 @@ class EventService {
         try {
             let { name, mobile, eventDate, note } = req.body
             let userData = req.userData
-            let checkEventExist = await EventModel?.findOne({ where: { name: name }, raw: true, attributes: ['name', 'id'] })
-            if (checkEventExist && checkEventExist?.id) {
-                return res.status(400).json({ message: "Event already exist with this name", statusCode: 400, success: false })
-            }
+            // let checkEventExist = await EventModel?.findOne({ where: { name: name }, raw: true, attributes: ['name', 'id'] });
+            // // ek din mai five 
+            // if (checkEventExist && checkEventExist?.id) {
+            //     return res.status(400).json({ message: "Event already exist with this name", statusCode: 400, success: false })
+            // }
+            
 
             let obj = { name, mobile, eventDate, note, user_id: userData?.id }
             await EventModel.create(obj)
