@@ -60,24 +60,45 @@ class userController {
 
 
 
-      async send_otp(req, res) {
-    try {
-      // Validate input
-    //   const { error } = SendOtpSchema.validate(req.body);
-    //   if (error) {
-    //     return res.status(400).json({
-    //       success: false,
-    //       message: error.details[0].message,
-    //     });
-    //   }
+//       async send_otp(req, res) {
+//     try {
+//       // Validate input
+//     //   const { error } = SendOtpSchema.validate(req.body);
+//     //   if (error) {
+//     //     return res.status(400).json({
+//     //       success: false,
+//     //       message: error.details[0].message,
+//     //     });
+//     //   }
 
-           await userServiceObj.send_otp(req, res)
+//            await userServiceObj.send_otp(req, res)
+//     } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ success: false, message: err.message });
+//     }
+//   }
+
+
+
+
+
+
+  async send_otp(req, res) {
+    try {
+      const { error } = SendOtpSchema.validate(req.body);
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.details[0].message,
+        });
+      }
+
+      await userServiceObj.send_otp(req, res);
     } catch (err) {
-      console.error(err);
+      console.error("Controller error:", err);
       res.status(500).json({ success: false, message: err.message });
     }
   }
-
 
     async verify_otp(req, res) {
     try {

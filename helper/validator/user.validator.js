@@ -66,7 +66,11 @@ export const change_password_schema = Joi.object({
 
 export const SendOtpSchema = Joi.object({
   phone: Joi.string()
-    .pattern(/^\+44\d{10}$/) // UK phone example: +44XXXXXXXXXX
-    .required(),
+    .pattern(/^\+44\d{10}$/) // e.g. +447123456789
+    .required()
+    .messages({
+      "string.pattern.base": "Phone number must be in the format +44XXXXXXXXXX",
+      "any.required": "Phone number is required",
+    }),
 });
 

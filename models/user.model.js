@@ -12,6 +12,15 @@ User.init(
     birthday_date: DataTypes.STRING,
     membership_number: DataTypes.STRING,
     access_token: DataTypes.TEXT,
+    otp: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    otpExpiry: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    
   },
   {
     sequelize,

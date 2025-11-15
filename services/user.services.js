@@ -3,6 +3,8 @@ import userModel from "../models/user.model.js";
 import { Op } from "sequelize";
 import dotenv from "dotenv";
 import twilio from "twilio";
+import clientTwilio from "../config/twilio.js";
+import User from "../models/user.model.js";
 
 let salt = 10
 import jwt from 'jsonwebtoken'
@@ -11,6 +13,7 @@ import bcrypt from 'bcrypt'
 
 
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const otpStore = {};
 
 
 class UserService {
@@ -305,44 +308,143 @@ class UserService {
 
   ////////otp
 
-  async send_otp(req, res) {
-    try {
-      const { phone } = req.body;
+  // async send_otp(req, res) {
+  //   try {
+  //     const { phone } = req.body;
 
-      const verification = await client.verify.v2
-        .services(process.env.TWILIO_VERIFY_SID)
-        .verifications.create({ to: phone, channel: "sms" });
+  //     const verification = await client.verify.v2
+  //       .services(process.env.TWILIO_VERIFY_SID)
+  //       .verifications.create({ to: phone, channel: "sms" });
 
-      res.json({ success: true, status: verification.status });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ success: false, message: err.message });
-    }
-  }
+  //     res.json({ success: true, status: verification.status });
+  //   } catch (err) {
+  //     console.error(err);
+  //     res.status(500).json({ success: false, message: err.message });
+  //   }
+  // }
+
+
 
 
 
   ///////VERIFY
 
-  async verify_otp(req, res) {
+  // async verify_otp(req, res) {
+  //   try {
+  //     const { phone, code } = req.body;
+
+  //     const verification_check = await client.verify.v2
+  //       .services(process.env.TWILIO_VERIFY_SID)
+  //       .verificationChecks.create({ to: phone, code });
+
+  //     if (verification_check.status === "approved") {
+  //       res.json({ success: true, message: "✅ Phone verified successfully!" });
+  //     } else {
+  //       res.json({ success: false, message: "❌ Invalid OTP" });
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     res.status(500).json({ success: false, message: err.message });
+  //   }
+  // }
+//////new verify
+
+
+
+  
+
+
+
+  async send_otp(req, res) {
     try {
-      const { phone, code } = req.body;
+      const { phone } = req.body;
 
-      const verification_check = await client.verify.v2
-        .services(process.env.TWILIO_VERIFY_SID)
-        .verificationChecks.create({ to: phone, code });
+      // Generate a 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000);
+      const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // valid for 5 mins
 
-      if (verification_check.status === "approved") {
-        res.json({ success: true, message: "✅ Phone verified successfully!" });
-      } else {
-        res.json({ success: false, message: "❌ Invalid OTP" });
+      // Save OTP and expiry in DB
+      const [updated] = await User.update(
+        { otp, otpExpiry },
+        { where: { phone } }
+      );
+
+      // If user not found in DB
+      if (updated === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found with this phone number" });
       }
+
+      // ✅ Send OTP via voice call (slowly)
+      const otpString = otp.toString().split("").join(", "); // makes it read slowly
+      await client.calls.create({
+        twiml: `<Response>
+                  <Say voice="alice" rate="slow">
+                    Your one time password is ${otpString}.
+                    I repeat, your one time password is ${otpString}.
+                    Thank you.
+                  </Say>
+                </Response>`,
+        to: phone,
+        from: process.env.TWILIO_PHONE_NUMBER,
+      });
+
+      res.json({
+        success: true,
+        message: "OTP sent successfully via voice call",
+        otp, // 🔹 for testing — remove in production
+      });
+      console.log(otp,"otpotp====>")
     } catch (err) {
-      console.error(err);
+      console.error("Error sending OTP:", err);
       res.status(500).json({ success: false, message: err.message });
     }
   }
 
+  // =====================================================
+  // VERIFY OTP
+  // =====================================================
+  async verify_otp(req, res) {
+    try {
+      const { phone, code } = req.body;
+
+      // Get user record
+      const user = await User.findOne({ where: { phone } });
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+
+      // Check if OTP exists
+      if (!user.otp) {
+        return res
+          .status(400)
+          .json({ success: false, message: "No OTP sent to this phone" });
+      }
+
+      // Check expiry
+      if (new Date() > new Date(user.otpExpiry)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "OTP has expired" });
+      }
+
+      // Compare OTP
+      if (code.toString() === user.otp.toString()) {
+        // Clear OTP after successful verification
+        await User.update({ otp: null, otpExpiry: null }, { where: { phone } });
+        return res.json({
+          success: true,
+          message: "✅ Phone verified successfully!",
+        });
+      } else {
+        return res.json({ success: false, message: "❌ Invalid OTP" });
+      }
+    } catch (err) {
+      console.error("Error verifying OTP:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
 
 
 
