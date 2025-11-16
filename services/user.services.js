@@ -9,6 +9,7 @@ import User from "../models/user.model.js";
 let salt = 10
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+import env from "../config/environmentVariables.js";
 
 
 
@@ -84,7 +85,7 @@ class UserService {
 
       // check if phone exists
       let findMobileExist = await userModel.findOne({
-        where: { phone },
+        where: { phone, is_phone_verify: true },
         raw: true,
         attributes: ["id"],
       });
@@ -123,6 +124,7 @@ class UserService {
         phone,
         password: encrypt,
         membership_number: newMemberId,
+        is_phone_verify: false
       };
 
       await userModel.create(obj);
@@ -148,44 +150,8 @@ class UserService {
   }
 
 
-
   // generateAccessTok
   async login(req, res) {
-    // try {
-    //     let { email, password } = req.body
-
-    //     let find = await userModel.findOne({ where: { email }, raw: true })
-    //     // console.log(find, "findEmailfindEmail")
-
-    //     if (!find) {
-    //         return res.status(400).json({ message: "User not found, kindly register first", success: false, statusCode: 400 })
-    //     }
-    //     // console.log(find, "findemali")
-    //     let checkpassword = await bcrypt.compare(password, find?.password);
-    //     // console.log(checkpassword, "checkpassword ")
-
-    //     if (!checkpassword) {
-    //         res.status(400).json({ message: "Password is not valid", success: false, statusCode: 400 })
-    //         return;
-    //     }
-
-    //     delete find.password
-    //     delete find.access_token
-    //     let generateToken = generateAccessToken(find)
-    //     let access_token = generateAccessToken(find)
-
-    //     await userModel?.update({ access_token: access_token }, { where: { id: find?.id } })
-
-    //     find.token = generateToken
-    //     find.access_token = access_token
-
-    //     return res.status(200).json({ mesage: "Login Success", data: find, statusCode: 200, success: true })
-    // } catch (error) {
-    //     console.log(error)
-    //     return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
-    // }
-
-    ///////
     try {
       let { loginField, password } = req.body; // loginField can be email or membership number
 
@@ -200,9 +166,14 @@ class UserService {
       // Find user by email OR membership number
       let find = await userModel.findOne({
         where: {
-          [Op.or]: [
-            { phone: loginField },
-            { membership_number: loginField }
+          [Op.and]: [
+            {
+              [Op.or]: [
+                { phone: loginField, is_phone_verify: true },
+                { membership_number: loginField }
+              ]
+            },
+            { is_phone_verify: true }
           ]
         },
         raw: true
@@ -228,7 +199,7 @@ class UserService {
 
       // Remove sensitive info
       delete find.password;
-      delete find.access_token  
+      delete find.access_token
       // Generate token
       let access_token = generateAccessToken(find);
 
@@ -278,8 +249,6 @@ class UserService {
       let token_user = req.userData
       let { current_password, new_password, confirm_password } = req.body
       let fetch = await userModel?.findOne({ where: { id: token_user?.id }, raw: true, attributes: ['id', 'password'] })
-
-
 
 
 
@@ -347,17 +316,22 @@ class UserService {
   //     res.status(500).json({ success: false, message: err.message });
   //   }
   // }
-//////new verify
+  //////new verify
 
 
 
-  
 
 
+  /** 
+   * 
+   * sonu --> ke pass fatima ka nuberb usne accout create 
+   * fatima ke pass , apka number hai docuent ban gya ... 
+   * 
+  */
 
   async send_otp(req, res) {
     try {
-      const { phone } = req.body;
+      const { phone, membership_number } = req.body;
 
       // Generate a 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000);
@@ -366,7 +340,7 @@ class UserService {
       // Save OTP and expiry in DB
       const [updated] = await User.update(
         { otp, otpExpiry },
-        { where: { phone } }
+        { where: { phone, membership_number } }
       );
 
       // If user not found in DB
@@ -381,21 +355,22 @@ class UserService {
       await client.calls.create({
         twiml: `<Response>
                   <Say voice="alice" rate="slow">
-                    Your one time password is ${otpString}.
-                    I repeat, your one time password is ${otpString}.
+                    COLONY one time password is ${otpString}.
+                    I repeat, COLONY one time password is ${otpString}.
                     Thank you.
                   </Say>
                 </Response>`,
         to: phone,
-        from: process.env.TWILIO_PHONE_NUMBER,
+        from: env.TWILIO_PHONE_NUMBER,
       });
 
       res.json({
         success: true,
+
         message: "OTP sent successfully via voice call",
         otp, // 🔹 for testing — remove in production
       });
-      console.log(otp,"otpotp====>")
+      console.log(otp, "otpotp====>")
     } catch (err) {
       console.error("Error sending OTP:", err);
       res.status(500).json({ success: false, message: err.message });
@@ -407,10 +382,10 @@ class UserService {
   // =====================================================
   async verify_otp(req, res) {
     try {
-      const { phone, code } = req.body;
+      const { phone, code, membership_number } = req.body;
 
       // Get user record
-      const user = await User.findOne({ where: { phone } });
+      const user = await User.findOne({ where: { phone, membership_number }, raw: true, order: [['id', 'DESC']] });
       if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
       }
@@ -432,7 +407,8 @@ class UserService {
       // Compare OTP
       if (code.toString() === user.otp.toString()) {
         // Clear OTP after successful verification
-        await User.update({ otp: null, otpExpiry: null }, { where: { phone } });
+        await User.update({ otp: null, otpExpiry: null, is_phone_verify: true }, { where: { phone, is_phone_verify: false, membership_number } });
+
         return res.json({
           success: true,
           message: "✅ Phone verified successfully!",

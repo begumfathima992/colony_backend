@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/dbconfig.js';
 
-class User extends Model {}
+class User extends Model { }
 
 User.init(
   {
@@ -20,7 +20,10 @@ User.init(
       type: DataTypes.DATE,
       allowNull: true,
     },
-    
+    is_phone_verify: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    }
   },
   {
     sequelize,

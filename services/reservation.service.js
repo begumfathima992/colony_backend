@@ -386,24 +386,43 @@ class ReservationService {
   async fetch_all_reservation(req, res) {
     try {
       let userObj = req.userData
-      let get = await Reservation?.findAll({ where: { user_id: userObj.id }, raw: true })
+      let reservations = await Reservation?.findAll({ where: { user_id: userObj.id }, raw: true })
 
-      for (let i = 0; i < get.length; i++) {
-        if (i == 0) {
-          get[i].isPaid = true
-          get[i].cancellationFee = 10
-          get[i].canCancel = true
+      for (let i = 0; i < reservations.length; i++) {
 
+        // Convert DB date + time into a single datetime
+        const reservationDateTime = new Date(`${reservations[i].date} ${reservations[i].time}`);
+
+        // Calculate hours difference
+        const diffMs = reservationDateTime - now;
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        if (diffHours <= 24) {
+          // ❗ Within last 24 hours → charges apply
+          reservations[i].canCancel = true;
+          reservations[i].cancellationFee = 10;
+          reservations[i].isPaid = true;
         } else {
-
-          get[i].isPaid = false
-          get[i].cancellationFee = 10
-          get[i].canCancel = false
+          // ✔ More than 24 hours → no fee
+          reservations[i].canCancel = true;
+          reservations[i].cancellationFee = 0;
+          reservations[i].isPaid = false;
         }
+        // if (i == 0) {
+        //   get[i].isPaid = true
+        //   get[i].cancellationFee = 10
+        //   get[i].canCancel = true
+
+        // } else {
+
+        //   get[i].isPaid = false
+        //   get[i].cancellationFee = 10
+        //   get[i].canCancel = false
+        // }
       }
-      return res.status(200).json({ message: "Reservation fetched", data: get, status: 200 })
+      return res.status(200).json({ message: "Reservation fetched", data: reservations, status: 200 })
     } catch (error) {
-      console.log(error,"====>get error")
+      console.log(error, "====>get error")
       return res.status(500).json({ message: error?.message, statusCode })
     }
   }
