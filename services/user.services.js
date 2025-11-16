@@ -368,7 +368,7 @@ class UserService {
         success: true,
 
         message: "OTP sent successfully via voice call",
-        otp, // 🔹 for testing — remove in production
+        // otp, // 🔹 for testing — remove in production
       });
       console.log(otp, "otpotp====>")
     } catch (err) {

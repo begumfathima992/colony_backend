@@ -77,4 +77,4 @@ async function sol() {
   // let get=await EventModel?.findAll({raw:true})
   // console.log(get,"getgetg")
 }
-sol()
+// sol()
