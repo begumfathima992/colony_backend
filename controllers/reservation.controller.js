@@ -80,6 +80,33 @@ class ReservationController {
     try {
       const userObj = req.userData
       let { date, time, partySize } = req.body;
+      // Convert given time to minutes (HH:MM format)
+      const [hour, minute] = time.split(":").map(Number);
+      const totalMinutes = hour * 60 + minute;
+
+      // Allowed range
+      const minTime = 17 * 60; // 5:00 PM
+      const maxTime = 22 * 60; // 10:00 PM
+
+      if (totalMinutes < minTime || totalMinutes > maxTime) {
+        return res.status(400).json({
+          message: "Time must be between 5:00 PM and 10:00 PM",
+          statusCode: 400
+        });
+      }
+      // --------------------------
+      // Validate Date >= 24 hours
+      // --------------------------
+      const reservationDate = new Date(date);     // user selected date
+      const currentDate = new Date();             // now
+      const after24Hours = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+
+      if (reservationDate.getTime() < after24Hours.getTime()) {
+        return res.status(400).json({
+          message: "Reservation date must be at least 24 hours from now",
+          statusCode: 400
+        });
+      }
       date = moment(date, 'YYYY-MM-DD').format('YYYY-MM-DD') // ✅ safe forma
       if (!date || !time || !partySize) {
         return res.status(400).json({
@@ -257,34 +284,34 @@ class ReservationController {
   // };
 
 
-  async createPayment(req, res)  {
-  try {
-    const { amount } = req.body;
+  async createPayment(req, res) {
+    try {
+      const { amount } = req.body;
 
-    const customer = await stripe.customers.create();
-console.log('Customer created:', customer.id);
-    const ephemeralKey = await stripe.ephemeralKeys.create(
-      { customer: customer.id },
-      { apiVersion: '2024-06-20' } // ✅ REQUIRED
-    );
+      const customer = await stripe.customers.create();
+      console.log('Customer created:', customer.id);
+      const ephemeralKey = await stripe.ephemeralKeys.create(
+        { customer: customer.id },
+        { apiVersion: '2024-06-20' } // ✅ REQUIRED
+      );
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'aed',
-      customer: customer.id,
-      automatic_payment_methods: { enabled: true },
-    });
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: 'aed',
+        customer: customer.id,
+        automatic_payment_methods: { enabled: true },
+      });
 
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      ephemeralKey: ephemeralKey.secret,
-      customer: customer.id,
-    });
-  } catch (err) {
-    console.error('Stripe Error:', err);
-    res.status(500).json({ error: err.message });
-  }
-};
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        ephemeralKey: ephemeralKey.secret,
+        customer: customer.id,
+      });
+    } catch (err) {
+      console.error('Stripe Error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  };
 
 
 
@@ -386,9 +413,9 @@ console.log('Customer created:', customer.id);
 
   async save_card_details(req, res) {
     try {
-      console.log(req.body,"======>body")
+      console.log(req.body, "======>body")
       let { error } = cart_detail_save.validate(req.body, options)
-      console.log(error, "Eeeeeeeeeeeee",req.body,"bodyyy")
+      console.log(error, "Eeeeeeeeeeeee", req.body, "bodyyy")
       if (error) {
         return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
       }
@@ -400,7 +427,7 @@ console.log('Customer created:', customer.id);
 
   async cancellation_reservation(req, res) {
     try {
-        console.log(req.body, "bodyy====Eeeeeeeeeeeee")
+      console.log(req.body, "bodyy====Eeeeeeeeeeeee")
       let { error } = cancellation_reservation.validate(req.body, options)
       console.log(error, "Eeeeeeeeeeeee")
       if (error) {
@@ -414,7 +441,7 @@ console.log('Customer created:', customer.id);
 
   async fetch_all_reservation(req, res) {
     try {
-    
+
       await reservationServiceObj?.fetch_all_reservation(req, res)
     } catch (error) {
       return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
