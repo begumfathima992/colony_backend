@@ -82,6 +82,7 @@ class UserService {
   async register(req, res) {
     try {
       let { name, phone, password } = req.body;
+      console.log(req.body,"======>register error")
 
       // check if phone exists
       let findMobileExist = await userModel.findOne({
@@ -329,57 +330,119 @@ class UserService {
    * 
   */
 
-  async send_otp(req, res) {
-    try {
-      const { phone, membership_number } = req.body;
+  // async send_otp(req, res) {
+  //   try {
+  //     const { phone, membership_number } = req.body;
 
-      // Generate a 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000);
-      const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // valid for 5 mins
+  //     // Generate a 6-digit OTP
+  //     const otp = Math.floor(100000 + Math.random() * 900000);
+  //     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // valid for 5 mins
 
-      // Save OTP and expiry in DB
-      const [updated] = await User.update(
-        { otp, otpExpiry },
-        { where: { phone, membership_number } }
-      );
+  //     // Save OTP and expiry in DB
+  //     const [updated] = await User.update(
+  //       { otp, otpExpiry },
+  //       { where: { phone, membership_number } }
+  //     );
 
-      // If user not found in DB
-      if (updated === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found with this phone number" });
-      }
+  //     // If user not found in DB
+  //     if (updated === 0) {
+  //       return res
+  //         .status(404)
+  //         .json({ success: false, message: "User not found with this phone number" });
+  //     }
 
-      // ✅ Send OTP via voice call (slowly)
-      const otpString = otp.toString().split("").join(", "); // makes it read slowly
-      await client.calls.create({
-        twiml: `<Response>
-                  <Say voice="alice" rate="slow">
-                    COLONY one time password is ${otpString}.
-                    I repeat, COLONY one time password is ${otpString}.
-                    Thank you.
-                  </Say>
-                </Response>`,
-        to: phone,
-        from: env.TWILIO_PHONE_NUMBER,
-      });
+  //     // ✅ Send OTP via voice call (slowly)
+  //     const otpString = otp.toString().split("").join(", "); // makes it read slowly
+  //     await client.calls.create({
+  //       twiml: `<Response>
+  //                 <Say voice="alice" rate="slow">
+  //                   COLONY one time password is ${otpString}.
+  //                   I repeat, COLONY one time password is ${otpString}.
+  //                   Thank you.
+  //                 </Say>
+  //               </Response>`,
+  //       to: phone,
+  //       from: env.TWILIO_PHONE_NUMBER,
+  //     });
 
-      res.json({
-        success: true,
+  //     res.json({
+  //       success: true,
 
-        message: "OTP sent successfully via voice call",
-        // otp, // 🔹 for testing — remove in production
-      });
-      console.log(otp, "otpotp====>")
-    } catch (err) {
-      console.error("Error sending OTP:", err);
-      res.status(500).json({ success: false, message: err.message });
-    }
-  }
+  //       message: "OTP sent successfully via voice call",
+  //       // otp, // 🔹 for testing — remove in production
+  //     });
+  //     console.log(otp, "otpotp====>")
+  //   } catch (err) {
+  //     console.error("Error sending OTP:", err);
+  //     res.status(500).json({ success: false, message: err.message });
+  //   }
+  // }
 
   // =====================================================
   // VERIFY OTP
   // =====================================================
+
+async send_otp(req, res) {
+  try {
+    const { phone, membership_number } = req.body;
+
+    if (!phone || !membership_number) {
+      return res.status(400).json({
+        success: false,
+        message: "phone and membership_number are required",
+      });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
+    const [updated] = await User.update(
+      { otp, otpExpiry },
+      { where: { phone, membership_number } }
+    );
+
+    if (updated === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found with this phone number",
+      });
+    }
+
+    const otpString = otp.toString()?.split("")?.join(", ");
+
+    await client.calls.create({
+      twiml: `<Response>
+                <Say voice="alice" rate="slow">
+                  COLONY one time password is ${otpString}.
+                  I repeat, COLONY one time password is ${otpString}.
+                  Thank you.
+                </Say>
+              </Response>`,
+      to: phone,
+      from: env.TWILIO_PHONE_NUMBER,
+    });
+
+    res.json({
+      success: true,
+      message: "OTP sent successfully via voice call",
+    });
+
+  } catch (err) {
+    console.error("Error sending OTP:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
   async verify_otp(req, res) {
     try {
       const { phone, code, membership_number } = req.body;

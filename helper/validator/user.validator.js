@@ -66,11 +66,54 @@ export const change_password_schema = Joi.object({
 
 export const SendOtpSchema = Joi.object({
   phone: Joi.string()
-    .pattern(/^\+44\d{10}$/) // e.g. +447123456789
+  
+    // .pattern(/^\+44\d{10}$/)
+     .max(16)
+    .required()
+    .messages({
+      "string.pattern.base": "Phone number must be in the format 0XXXXXXXXXX",
+      "any.required": "Phone number is required",
+    }),
+
+ membership_number: Joi.string()
+  .pattern(/^\d+$/)
+  .required()
+  .messages({
+    "string.pattern.base": "Membership number must contain only numbers",
+    "any.required": "Membership number is required",
+  }),
+});
+
+
+
+export const VerifyOtpSchema = Joi.object({
+  phone: Joi.string()
+    // .pattern(/^\+44\d{10}$/)
+    .max(16)
     .required()
     .messages({
       "string.pattern.base": "Phone number must be in the format +44XXXXXXXXXX",
       "any.required": "Phone number is required",
     }),
+
+  code: Joi.string()
+    .length(6)
+    .pattern(/^[0-9]{6}$/)
+    .required()
+    .messages({
+      "string.length": "OTP must be 6 digits",
+      "string.pattern.base": "OTP must contain only numbers",
+      "any.required": "OTP code is required",
+    }),
+
+  membership_number: Joi.string()
+    .pattern(/^\d+$/)
+    .required()
+    .messages({
+      "string.pattern.base": "membership_number must be numeric",
+      "any.required": "membership_number is required",
+    })
 });
+
+
 

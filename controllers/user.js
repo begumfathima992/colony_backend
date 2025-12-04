@@ -1,7 +1,7 @@
 import Joi from "joi";
 import userServiceObj from "../services/user.services.js";
 import moment from 'moment'
-import { change_password_schema, UserLoginSchema, UserSchema, SendOtpSchema } from "../helper/validator/user.validator.js";
+import { change_password_schema, UserLoginSchema, UserSchema, SendOtpSchema,VerifyOtpSchema} from "../helper/validator/user.validator.js";
 
 
 const options = {
@@ -85,7 +85,9 @@ class userController {
 
   async send_otp(req, res) {
     try {
-      const { error } = SendOtpSchema.validate(req.body);
+      console.log(req.body,"req======>")
+      const { error } = SendOtpSchema.validate(req.body,options);
+      console.log(error,"erroooooor")
       if (error) {
         return res.status(400).json({
           success: false,
@@ -102,14 +104,14 @@ class userController {
 
     async verify_otp(req, res) {
     try {
-      // Validate input
-    //   const { error } = SendOtpSchema.validate(req.body);
-    //   if (error) {
-    //     return res.status(400).json({
-    //       success: false,
-    //       message: error.details[0].message,
-    //     });
-    //   }
+ 
+      const { error } = VerifyOtpSchema.validate(req.body);
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.details[0].message,
+        });
+      }
 
            await userServiceObj.verify_otp(req, res)
     } catch (err) {

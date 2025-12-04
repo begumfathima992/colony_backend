@@ -361,8 +361,9 @@ class ReservationService {
       if (!findObj) {
         return res.status(404).json({ message: 'Reservation data not found', statusCode: 404, success: false })
       }
+      
       let saveObj = {
-        cardDetails, isAcceptCancellation
+        cardDetails, isAcceptCancellation,status:"CONFIRMED"
       }
       await Reservation?.update(saveObj, { where: { id: reservationId, user_id: userData?.id } })
       return res.status(200).json({ message: "Details saved success", statusCode: 200, success: true })
@@ -385,9 +386,12 @@ class ReservationService {
 
   async fetch_all_reservation(req, res) {
     try {
+      // console.log(req,"=========>>>>>>req")
       let userObj = req.userData
       let reservations = await Reservation?.findAll({ where: { user_id: userObj.id }, raw: true })
 
+      console.log(reservations,"=========>>>>>>reservationsreservationsreservations")
+ const now = new Date();
       for (let i = 0; i < reservations.length; i++) {
 
         // Convert DB date + time into a single datetime
@@ -408,6 +412,7 @@ class ReservationService {
           reservations[i].cancellationFee = 0;
           reservations[i].isPaid = false;
         }
+        reservations[i].amount=env.ZIGGY_PER_PERSON_FEE*reservations[i].partySize
         // if (i == 0) {
         //   get[i].isPaid = true
         //   get[i].cancellationFee = 10
