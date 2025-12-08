@@ -78,7 +78,7 @@ class ReservationController {
   // STEP 1 — Create base reservation
   async createStep1(req, res) {
     try {
-      console.log(req.body,"=====>req create")
+      console.log(req.body, "=====>req create")
       const userObj = req.userData
       let { date, time, partySize } = req.body;
       // Convert given time to minutes (HH:MM format)
@@ -101,10 +101,10 @@ class ReservationController {
       const reservationDate = new Date(`${date} ${time}`);
       // const reservationDate = new Date(date);     // user selected date
       const currentDate = new Date();             // now
-      const after24Hours = new Date(currentDate.getTime() 
-      // + 24 * 60 * 60 * 1000
-    );
-console.log(reservationDate ,"date===>",after24Hours,"after24Hours=======>>>>>")
+      const after24Hours = new Date(currentDate.getTime()
+        // + 24 * 60 * 60 * 1000
+      );
+      console.log(reservationDate, "date===>", after24Hours, "after24Hours=======>>>>>")
       if (reservationDate.getTime() < after24Hours.getTime()) {
         return res.status(400).json({
           message: "Booking is not allowed for a prior or expired time slot.",
@@ -136,7 +136,6 @@ console.log(reservationDate ,"date===>",after24Hours,"after24Hours=======>>>>>")
         userObj,
         dropdownOptions,
         cancellationPolicy
-
       }
 
       return res.status(201).json({ success: true, obj });

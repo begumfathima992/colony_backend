@@ -10,6 +10,7 @@ let salt = 10
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import env from "../config/environmentVariables.js";
+import cardDetailModel from "../models/cardDetails.js";
 
 
 
@@ -82,7 +83,7 @@ class UserService {
   async register(req, res) {
     try {
       let { name, phone, password } = req.body;
-      console.log(req.body,"======>register error")
+      console.log(req.body, "======>register error")
 
       // check if phone exists
       let findMobileExist = await userModel.findOne({
@@ -208,6 +209,11 @@ class UserService {
       await userModel.update({ access_token }, { where: { id: find.id } });
 
       find.access_token = access_token;
+      //card_Details fetch 
+
+      let fetch_card_details = await cardDetailModel?.findAll({ where: { user_id: String(find.id) }, raw: true })
+      console.log(fetch_card_details, 'fetch_card_detailsfetch_card_details')
+      find.card_details = fetch_card_details || []
 
       return res.status(200).json({
         message: "Login Success",
@@ -217,7 +223,7 @@ class UserService {
       });
 
     } catch (error) {
-      console.log(error);
+      console.log(error, "www login loginnnn");
       return res.status(500).json({
         message: error?.message,
         statusCode: 500,
@@ -320,9 +326,6 @@ class UserService {
   //////new verify
 
 
-
-
-
   /** 
    * 
    * sonu --> ke pass fatima ka nuberb usne accout create 
@@ -382,63 +385,56 @@ class UserService {
   // VERIFY OTP
   // =====================================================
 
-async send_otp(req, res) {
-  try {
-    const { phone, membership_number } = req.body;
+  async send_otp(req, res) {
+    try {
+      const { phone, membership_number } = req.body;
 
-    if (!phone || !membership_number) {
-      return res.status(400).json({
-        success: false,
-        message: "phone and membership_number are required",
-      });
-    }
+      if (!phone || !membership_number) {
+        return res.status(400).json({
+          success: false,
+          message: "phone and membership_number are required",
+        });
+      }
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+      const otp = Math.floor(100000 + Math.random() * 900000);
+      const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
-    const [updated] = await User.update(
-      { otp, otpExpiry },
-      { where: { phone, membership_number } }
-    );
+      const [updated] = await User.update(
+        { otp, otpExpiry },
+        { where: { phone, membership_number } }
+      );
 
-    if (updated === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found with this phone number",
-      });
-    }
+      if (updated === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found with this phone number",
+        });
+      }
 
-    const otpString = otp.toString()?.split("")?.join(", ");
+      const otpString = otp.toString()?.split("")?.join(", ");
 
-    await client.calls.create({
-      twiml: `<Response>
+      await client.calls.create({
+        twiml: `<Response>
                 <Say voice="alice" rate="slow">
                   COLONY one time password is ${otpString}.
                   I repeat, COLONY one time password is ${otpString}.
                   Thank you.
                 </Say>
               </Response>`,
-      to: phone,
-      from: env.TWILIO_PHONE_NUMBER,
-    });
+        to: phone,
+        from: env.TWILIO_PHONE_NUMBER,
+      });
 
-    res.json({
-      success: true,
-      message: "OTP sent successfully via voice call",
-    });
+      res.json({
+        success: true,
+        message: "OTP sent successfully via voice call",
+      });
 
-  } catch (err) {
-    console.error("Error sending OTP:", err);
-    res.status(500).json({ success: false, message: err.message });
+    } catch (err) {
+      console.error("Error sending OTP:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
   }
-}
-
-
-
-
-
-
-
 
 
 
@@ -484,24 +480,6 @@ async send_otp(req, res) {
       res.status(500).json({ success: false, message: err.message });
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

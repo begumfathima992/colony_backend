@@ -2,6 +2,7 @@ import Reservation from "../models/reservation.model.js";
 
 import stripe, { stripeWebhookSecret } from '../config/stripe.js'
 import env from "../config/environmentVariables.js";
+import cardDetailModel from "../models/cardDetails.js";
 
 
 // import { Reservation } from '../models/index.model.js'; // central models import
@@ -339,9 +340,6 @@ class ReservationService {
 
 
 
-
-
-
   async deleteReservation(id) {
     return await Reservation.destroy({ where: { id } });
   }
@@ -361,10 +359,20 @@ class ReservationService {
       if (!findObj) {
         return res.status(404).json({ message: 'Reservation data not found', statusCode: 404, success: false })
       }
-      
+
       let saveObj = {
-        cardDetails, isAcceptCancellation,status:"CONFIRMED"
+        cardDetails, isAcceptCancellation, status: "CONFIRMED"
       }
+      let obj = {
+        cardDetails,
+        CVV: cardDetails?.CVV,
+        cardExpiry: cardDetails?.cardExpiry,
+        cardNumber: cardDetails?.cardNumber
+      }
+
+      let addCardDetails = await cardDetailModel?.create(obj)
+      saveObj.cardDetailId = addCardDetails?.id
+
       await Reservation?.update(saveObj, { where: { id: reservationId, user_id: userData?.id } })
       return res.status(200).json({ message: "Details saved success", statusCode: 200, success: true })
 
@@ -390,8 +398,8 @@ class ReservationService {
       let userObj = req.userData
       let reservations = await Reservation?.findAll({ where: { user_id: userObj.id }, raw: true })
 
-      console.log(reservations,"=========>>>>>>reservationsreservationsreservations")
- const now = new Date();
+      console.log(reservations, "=========>>>>>>reservationsreservationsreservations")
+      const now = new Date();
       for (let i = 0; i < reservations.length; i++) {
 
         // Convert DB date + time into a single datetime
@@ -412,7 +420,7 @@ class ReservationService {
           reservations[i].cancellationFee = 0;
           reservations[i].isPaid = false;
         }
-        reservations[i].amount=env.ZIGGY_PER_PERSON_FEE*reservations[i].partySize
+        reservations[i].amount = env.ZIGGY_PER_PERSON_FEE * reservations[i].partySize
         // if (i == 0) {
         //   get[i].isPaid = true
         //   get[i].cancellationFee = 10
@@ -431,6 +439,38 @@ class ReservationService {
       return res.status(500).json({ message: error?.message, statusCode })
     }
   }
+
+
+  async save_card_details_by_cardid(req, res) {
+    try {
+      let {
+        reservationId,
+        cardDetailId,
+        isAcceptCancellation
+      } = req.body
+
+      let userData = req.userData
+
+      let findObj = await Reservation.findOne({ where: { user_id: userData?.id, id: reservationId }, raw: true })
+      if (!findObj) {
+        return res.status(404).json({ message: 'Reservation data not found', statusCode: 404, success: false })
+      }
+
+      let saveObj = {
+        cardDetailId, isAcceptCancellation, status: "CONFIRMED"
+      }
+      await Reservation?.update(saveObj, { where: { id: reservationId, user_id: userData?.id } })
+      return res.status(200).json({ message: "Details saved success", statusCode: 200, success: true })
+
+    } catch (error) {
+      console.log(error, "save_card_Detals")
+      return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+    }
+  }
+
+  //CRUD card details 
+
+
 }
 
 const reservationServiceObj = new ReservationService();
