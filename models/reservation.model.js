@@ -109,7 +109,7 @@ Reservation.init(
       defaultValue: false
     },
     cardDetailId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: true
     }
   },
