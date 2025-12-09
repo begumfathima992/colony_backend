@@ -350,7 +350,7 @@ class ReservationService {
         reservationId,
         phone,
         cardDetails,
-        isAcceptCancellation
+        isAcceptCancellation, cardDetailId
       } = req.body
 
       let userData = req.userData
@@ -361,17 +361,17 @@ class ReservationService {
       }
 
       let saveObj = {
-        cardDetails, isAcceptCancellation, status: "CONFIRMED"
+        cardDetails, isAcceptCancellation, status: "CONFIRMED", cardDetailId
       }
-      let obj = {
-        cardDetails,
-        CVV: cardDetails?.CVV,
-        cardExpiry: cardDetails?.cardExpiry,
-        cardNumber: cardDetails?.cardNumber
-      }
+      // let obj = {
+      //   cardDetails,
+      //   CVV: cardDetails?.CVV,
+      //   cardExpiry: cardDetails?.cardExpiry,
+      //   cardNumber: cardDetails?.cardNumber
+      // }
 
-      let addCardDetails = await cardDetailModel?.create(obj)
-      saveObj.cardDetailId = addCardDetails?.id
+      // let addCardDetails = await cardDetailModel?.create(obj)
+      // saveObj.cardDetailId = addCardDetails?.id
 
       await Reservation?.update(saveObj, { where: { id: reservationId, user_id: userData?.id } })
       return res.status(200).json({ message: "Details saved success", statusCode: 200, success: true })

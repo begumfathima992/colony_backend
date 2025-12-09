@@ -1,13 +1,18 @@
-import cardDetailModel from "../models/cardDetails";
+import cardDetailModel from "../models/cardDetails.js";
 
 class cardDetails {
     async add(req, res) {
         try {
             let { CVV, cardExpiry, cardNumber } = req.body
             let userObj = req.userData
+            let findExist = await cardDetailModel?.findOne({ where: { cardNumber: cardNumber, user_id: userObj?.id }, raw: true })
+            if (findExist && findExist?.id) {
+                return res.status(400).json({ message: "This card number exist", success: false, statusCode: 400 })
+            }
             let obj = {
                 user_id: userObj?.id, CVV, cardExpiry, cardNumber
             }
+            // console.log(obj, "objjjj")
             await cardDetailModel?.create(obj)
             res.status(201).json({ message: "Add Success", data: obj, success: true })
             return
@@ -15,10 +20,10 @@ class cardDetails {
             return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
         }
     }
-    async get(req, res) {
+    async get(req, res) {   
         try {
             let userObj = req.userData
-            let get = await cardDetailModel?.findAll({ where: { user_id: userObj?.id }, raw: true })
+            let get = await cardDetailModel?.findAll({ where: { user_id: userObj?.id }, raw: true, order: [['id', 'DESC']] })
             return res.status(200).json({ message: "Fetch data", data: get })
         } catch (error) {
             return res.status(500).json({ message: error?.message, statusCode: 500 })
@@ -55,12 +60,12 @@ class cardDetails {
             if (!get) {
                 return res.status(404).json({ message: "Data not found or deleted", statusCode: 404, success: false })
             }
-            await cardDetailModel?.delete({ where: { id } })
+            await cardDetailModel?.destroy({ where: { id } })
             return res.status(200).json({ message: "Data delete", success: true })
         } catch (error) {
             return res.status(500).json({ message: error?.message, statusCode: 500 })
         }
     }
 }
-const cardDetailsObj = new cardDetails
+const cardDetailsObj = new cardDetails()
 export default cardDetailsObj

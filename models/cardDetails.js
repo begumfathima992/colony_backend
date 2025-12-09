@@ -21,21 +21,18 @@ const cardDetailModel = dbconnection.define(
         type: Sequelize.STRING,
         allowNull: false
     },
-    expiryDate: {
+    cardExpiry: {
         type: Sequelize.STRING,
         allowNull: false
     },
-
-    cvvNumber: {
+    CVV: {
         type: DataTypes.STRING,
         allowNull: false,
     },
-
     extraDetails: {
         type: DataTypes.JSONB,
         allowNull: true,
     },
-
     created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

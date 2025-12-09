@@ -10,6 +10,7 @@ import User from "./models/user.model.js";
 import Reservation from "./models/reservation.model.js";
 import EventRoutes from "./routes/event.js";
 import EventModel from "./models/event.js";
+import cardDetailRoutes from "./routes/cardDetails.routes.js";
 // import faqCategoryRoutes from "./routes/faqCategory.js";
 // import faqQuestionAnswerRoutes from "./routes/faqQuestionAnswer.js";
 
@@ -20,7 +21,7 @@ dotenv.config();
 // Initialize app
 const app = express();
 app.use(cors({
-origin: '*', // React app URL
+  origin: '*', // React app URL
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -38,6 +39,7 @@ app.get("/health", (req, res) => {
 app.use("/user", userRoutes);
 app.use('/reservations', reservationRoutes);
 app.use("/event", EventRoutes);
+app.use("/card_detail", cardDetailRoutes)
 // app.use("/faq_question_answer", faqQuestionAnswerRoutes);
 
 // Default fallback route (404 handler)
@@ -66,18 +68,18 @@ app.use((req, res) => {
 async function sol() {
   let findd2 = await User?.findAll({
     //  where:     { name: "aone" },
-      raw: true,
-      //  attributes: ['id', 'membership_number', 'phone', 'name']
-       })
-       for(let le of findd2){
-        // await User.update({is_phone_verify:true},{where:{id:le?.id}})
-       }
+    raw: true,
+    //  attributes: ['id', 'membership_number', 'phone', 'name']
+  })
+  for (let le of findd2) {
+    // await User.update({is_phone_verify:true},{where:{id:le?.id}})
+  }
   console.log(findd2, "eeeeeeeee/eee")
   // let findd =await Reservation?.findAll( {where:{user_id:findd2[0].id}, raw:true})
   // let findd = await Reservation?.findOne({ where: { id: 26 }, raw: true })
-  let findd = await Reservation?.findAll({raw: true })
+  let findd = await Reservation?.findAll({ raw: true })
   // console.log(findd, 'findnddn')
   // let get=await EventModel?.findAll({raw:true})
   // console.log(get,"getgetg")
 }
-sol()
+// sol()
