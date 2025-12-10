@@ -107,6 +107,10 @@ Reservation.init(
     reservationCancel: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
+    },
+    cardDetailId: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   },
   {
