@@ -3,14 +3,14 @@ import cardDetailModel from "../models/cardDetails.js";
 class cardDetails {
     async add(req, res) {
         try {
-            let { CVV, cardExpiry, cardNumber } = req.body
+            let { CVV, cardExpiry, cardNumber,name } = req.body
             let userObj = req.userData
             let findExist = await cardDetailModel?.findOne({ where: { cardNumber: cardNumber, user_id: userObj?.id }, raw: true })
             if (findExist && findExist?.id) {
                 return res.status(400).json({ message: "This card number exist", success: false, statusCode: 400 })
             }
             let obj = {
-                user_id: userObj?.id, CVV, cardExpiry, cardNumber
+                user_id: userObj?.id, CVV, cardExpiry, cardNumber,name
             }
             // console.log(obj, "objjjj")
             await cardDetailModel?.create(obj)
@@ -32,7 +32,7 @@ class cardDetails {
     async update(req, res) {
         try {
             let userObj = req.userData
-            let { id, CVV, cardExpiry, cardNumber } = req.body
+            let { id, CVV, cardExpiry, cardNumber,name} = req.body
 
             let get = await cardDetailModel?.findOne({ where: { id: id, user_id: userObj?.id }, raw: true })
             if (!get) {
@@ -41,7 +41,8 @@ class cardDetails {
             let obj = {
                 CVV: CVV || get?.CVV,
                 cardExpiry: cardExpiry || get?.cardExpiry,
-                cardNumber: cardNumber || get?.cardNumber
+                cardNumber: cardNumber || get?.cardNumber,
+                 name: name || get?.name
             }
             await cardDetailModel?.update(obj, { where: { id } })
             return res.status(200).json({ message: "Data update success", data: obj, success: true })
