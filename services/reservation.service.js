@@ -344,43 +344,51 @@ class ReservationService {
     return await Reservation.destroy({ where: { id } });
   }
 
-  async save_card_details(req, res) {
-    try {
-      let {
-        reservationId,
-        phone,
-        cardDetails,
-        isAcceptCancellation, cardDetailId
-      } = req.body
+ async save_card_details(req, res) {
+  try {
+    let { reservationId, phone, cardDetails, isAcceptCancellation, cardDetailId } = req.body;
+    let userData = req.userData;
 
-      let userData = req.userData
+    // Find the reservation
+    let reservation = await Reservation.findOne({
+      where: { user_id: userData.id, id: reservationId },
+      raw: true
+    });
 
-      let findObj = await Reservation.findOne({ where: { user_id: userData?.id, id: reservationId }, raw: true })
-      if (!findObj) {
-        return res.status(404).json({ message: 'Reservation data not found', statusCode: 404, success: false })
-      }
-
-      let saveObj = {
-        cardDetails, isAcceptCancellation, status: "CONFIRMED", cardDetailId
-      }
-      // let obj = {
-      //   cardDetails,
-      //   CVV: cardDetails?.CVV,
-      //   cardExpiry: cardDetails?.cardExpiry,
-      //   cardNumber: cardDetails?.cardNumber
-      // }
-
-      // let addCardDetails = await cardDetailModel?.create(obj)
-      // saveObj.cardDetailId = addCardDetails?.id
-
-      await Reservation?.update(saveObj, { where: { id: reservationId, user_id: userData?.id } })
-      return res.status(200).json({ message: "Details saved success", statusCode: 200, success: true })
-
-    } catch (error) {
-      console.log(error, "save_card_Detals")
-      return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+    if (!reservation) {
+      return res.status(404).json({ message: 'Reservation not found', success: false, statusCode: 404 });
     }
+
+    // ✅ If cardDetailId is missing, create it
+    if (!cardDetailId) {
+      const newCard = await cardDetailModel.create({
+        cardNumber: cardDetails.cardNumber,
+        cardExpiry: cardDetails.cardExpiry,
+        CVV: cardDetails.CVV,
+        user_id: userData.id
+      });
+      cardDetailId = newCard.id;
+    }
+
+    // Update reservation
+    await Reservation.update(
+      {
+        cardDetails,
+        isAcceptCancellation,
+        status: "CONFIRMED",
+        cardDetailId
+      },
+      { where: { id: reservationId, user_id: userData.id } }
+    );
+
+    return res.status(200).json({ message: 'Details saved successfully', success: true, statusCode: 200 });
+
+  } catch (error) {
+    console.error('save_card_details error:', error);
+    return res.status(500).json({ message: error.message, success: false, statusCode: 500 });
   }
+}
+
 
   async cancellation_reservation(req, res) {
     try {
