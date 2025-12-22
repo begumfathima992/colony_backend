@@ -432,7 +432,7 @@ class ReservationController {
     try {
       console.log(req.body, "bodyy====Eeeeeeeeeeeee")
       let { error } = cancellation_reservation.validate(req.body, options)
-      console.log(error, "Eeeeeeeeeeeee")
+      // console.log(error, "Eeeeeeeeeeeee")
       if (error) {
         return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
       }

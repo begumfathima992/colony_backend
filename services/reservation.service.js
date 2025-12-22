@@ -3,6 +3,7 @@ import Reservation from "../models/reservation.model.js";
 import stripe, { stripeWebhookSecret } from '../config/stripe.js'
 import env from "../config/environmentVariables.js";
 import cardDetailModel from "../models/cardDetails.js";
+import { createPaymentIntent, isWithin24Hours } from "../helper/extra.js";
 
 
 // import { Reservation } from '../models/index.model.js'; // central models import
@@ -344,55 +345,71 @@ class ReservationService {
     return await Reservation.destroy({ where: { id } });
   }
 
- async save_card_details(req, res) {
-  try {
-    let { reservationId, phone, cardDetails, isAcceptCancellation, cardDetailId } = req.body;
-    let userData = req.userData;
+  async save_card_details(req, res) {
+    try {
+      let { reservationId, phone, cardDetails, isAcceptCancellation, cardDetailId } = req.body;
+      let userData = req.userData;
 
-    // Find the reservation
-    let reservation = await Reservation.findOne({
-      where: { user_id: userData.id, id: reservationId },
-      raw: true
-    });
-
-    if (!reservation) {
-      return res.status(404).json({ message: 'Reservation not found', success: false, statusCode: 404 });
-    }
-
-    // ✅ If cardDetailId is missing, create it
-    if (!cardDetailId) {
-      const newCard = await cardDetailModel.create({
-        cardNumber: cardDetails.cardNumber,
-        cardExpiry: cardDetails.cardExpiry,
-        CVV: cardDetails.CVV,
-        user_id: userData.id
+      // Find the reservation
+      let reservation = await Reservation.findOne({
+        where: { user_id: userData.id, id: reservationId },
+        raw: true
       });
-      cardDetailId = newCard.id;
+
+      if (!reservation) {
+        return res.status(404).json({ message: 'Reservation not found', success: false, statusCode: 404 });
+      }
+
+      // ✅ If cardDetailId is missing, create it
+      if (!cardDetailId) {
+        const newCard = await cardDetailModel.create({
+          cardNumber: cardDetails.cardNumber,
+          cardExpiry: cardDetails.cardExpiry,
+          CVV: cardDetails.CVV,
+          user_id: userData.id
+        });
+        cardDetailId = newCard.id;
+      }
+
+      // Update reservation
+      await Reservation.update(
+        {
+          cardDetails,
+          isAcceptCancellation,
+          status: "CONFIRMED",
+          cardDetailId
+        },
+        { where: { id: reservationId, user_id: userData.id } }
+      );
+
+      return res.status(200).json({ message: 'Details saved successfully', success: true, statusCode: 200 });
+
+    } catch (error) {
+      console.error('save_card_details error:', error);
+      return res.status(500).json({ message: error.message, success: false, statusCode: 500 });
     }
-
-    // Update reservation
-    await Reservation.update(
-      {
-        cardDetails,
-        isAcceptCancellation,
-        status: "CONFIRMED",
-        cardDetailId
-      },
-      { where: { id: reservationId, user_id: userData.id } }
-    );
-
-    return res.status(200).json({ message: 'Details saved successfully', success: true, statusCode: 200 });
-
-  } catch (error) {
-    console.error('save_card_details error:', error);
-    return res.status(500).json({ message: error.message, success: false, statusCode: 500 });
   }
-}
 
 
   async cancellation_reservation(req, res) {
     try {
       let { reservationId, cancel } = req.body
+      let get = await Reservation?.findOne({ where: { id: reservationId } })
+
+      let perPersonCost = env.ZIGGY_PER_PERSON_FEE
+      let totalCost = Number(get?.partySize) * Number(perPersonCost)
+      // console.log(totalCost, 'total costtttt')
+      let check = isWithin24Hours(get?.date, get?.time)
+
+      if (check) {
+        let chekcc = await createPaymentIntent(totalCost, reservationId)
+        if (chekcc && chekcc?.status == false) {
+          return res.status(404).json({
+            status: false,
+            message: "Reservation not found"
+          })
+        }
+      }
       await Reservation?.update({ reservationCancel: cancel }, { where: { id: reservationId } })
       return res.status(200).json({ message: "Reservation Cancelled", status: 200 })
     } catch (error) {
@@ -477,7 +494,6 @@ class ReservationService {
   }
 
   //CRUD card details 
-
 
 }
 
