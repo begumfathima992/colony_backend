@@ -343,7 +343,7 @@ class ReservationService {
   async deleteReservation(id) {
     return await Reservation.destroy({ where: { id } });
   }
-
+////////prabath sir code
  async save_card_details(req, res) {
   try {
     let { reservationId, phone, cardDetails, isAcceptCancellation, cardDetailId } = req.body;
@@ -360,15 +360,15 @@ class ReservationService {
     }
 
     // ✅ If cardDetailId is missing, create it
-    if (!cardDetailId) {
-      const newCard = await cardDetailModel.create({
-        cardNumber: cardDetails.cardNumber,
-        cardExpiry: cardDetails.cardExpiry,
-        CVV: cardDetails.CVV,
-        user_id: userData.id
-      });
-      cardDetailId = newCard.id;
-    }
+    // if (!cardDetailId) {
+    //   const newCard = await cardDetailModel.create({
+    //     cardNumber: cardDetails.cardNumber,
+    //     cardExpiry: cardDetails.cardExpiry,
+    //     CVV: cardDetails.CVV,
+    //     user_id: userData.id
+    //   });
+    //   cardDetailId = newCard.id;
+    // }
 
     // Update reservation
     await Reservation.update(
@@ -388,6 +388,191 @@ class ReservationService {
     return res.status(500).json({ message: error.message, success: false, statusCode: 500 });
   }
 }
+
+// async save_card_details(req, res) {
+//   try {
+//     const {
+//       reservationId,
+//       cardDetails,
+//       isAcceptCancellation,
+//       cardDetailId: incomingCardDetailId
+//     } = req.body;
+
+//     const userData = req.userData;
+
+//     // 1️⃣ Basic validations
+//     if (!reservationId) {
+//       return res.status(400).json({
+//         message: 'reservationId is required',
+//         success: false,
+//         statusCode: 400,
+//       });
+//     }
+
+//     if (!cardDetails || !cardDetails.cardNumber || !cardDetails.cardExpiry) {
+//       return res.status(400).json({
+//         message: 'Invalid card details',
+//         success: false,
+//         statusCode: 400,
+//       });
+//     }
+
+//     // 2️⃣ Find reservation
+//     const reservation = await Reservation.findOne({
+//       where: {
+//         id: reservationId,
+//         user_id: userData.id,
+//       },
+//     });
+
+//     if (!reservation) {
+//       return res.status(404).json({
+//         message: 'Reservation not found',
+//         success: false,
+//         statusCode: 404,
+//       });
+//     }
+
+//     // 3️⃣ Create card if cardDetailId not provided
+//     let cardDetailId = incomingCardDetailId;
+
+//     if (!cardDetailId) {
+//       const newCard = await cardDetailModel.create({
+//         user_id: userData.id,
+//         cardNumber: cardDetails.cardNumber,
+//         cardExpiry: cardDetails.cardExpiry,
+//         // ❌ DO NOT STORE CVV IN REAL APPS
+//         // CVV removed for security
+//       });
+
+//       cardDetailId = newCard.id;
+//     }
+
+//     // 4️⃣ Update reservation
+//     await Reservation.update(
+//       {
+//         cardDetailId,
+//         cardDetails, // ⚠️ acceptable for now since frontend expects it
+//         isAcceptCancellation: !!isAcceptCancellation,
+//         status: 'CONFIRMED',
+//       },
+//       {
+//         where: {
+//           id: reservationId,
+//           user_id: userData.id,
+//         },
+//       }
+//     );
+
+//     return res.status(200).json({
+//       message: 'Details saved successfully',
+//       success: true,
+//       statusCode: 200,
+//     });
+
+//   } catch (error) {
+//     console.error('save_card_details error:', error);
+//     return res.status(500).json({
+//       message: 'Internal server error',
+//       success: false,
+//       statusCode: 500,
+//     });
+//   }
+// }
+
+// async save_card_details(req, res) {
+//   try {
+//     const {
+//       reservationId,
+//       cardDetails,
+//       isAcceptCancellation,
+//       cardDetailId: incomingCardDetailId
+//     } = req.body;
+
+//     const userData = req.userData;
+
+//     // 1️⃣ Basic validations
+//     if (!reservationId) {
+//       return res.status(400).json({
+//         message: 'reservationId is required',
+//         success: false,
+//         statusCode: 400,
+//       });
+//     }
+
+//     if (!cardDetails || !cardDetails.cardNumber || !cardDetails.cardExpiry) {
+//       return res.status(400).json({
+//         message: 'Invalid card details',
+//         success: false,
+//         statusCode: 400,
+//       });
+//     }
+
+//     // 2️⃣ Find reservation
+//     const reservation = await Reservation.findOne({
+//       where: {
+//         id: reservationId,
+//         user_id: userData.id,
+//       },
+//     });
+
+//     if (!reservation) {
+//       return res.status(404).json({
+//         message: 'Reservation not found',
+//         success: false,
+//         statusCode: 404,
+//       });
+//     }
+
+//     // 3️⃣ Create card if cardDetailId not provided
+//     let cardDetailId = incomingCardDetailId;
+
+//     if (!cardDetailId) {
+//       const newCard = await cardDetailModel.create({
+//         user_id: userData.id,
+//         cardNumber: cardDetails.cardNumber,
+//         cardExpiry: cardDetails.cardExpiry,
+//         // ❌ DO NOT STORE CVV IN REAL APPS
+//         // CVV removed for security
+//       });
+
+//       cardDetailId = newCard.id;
+//     }
+
+//     // 4️⃣ Update reservation
+//     await Reservation.update(
+//       {
+//         cardDetailId,
+//         cardDetails, // ⚠️ acceptable for now since frontend expects it
+//         isAcceptCancellation: !!isAcceptCancellation,
+//         status: 'CONFIRMED',
+//       },
+//       {
+//         where: {
+//           id: reservationId,
+//           user_id: userData.id,
+//         },
+//       }
+//     );
+
+//     return res.status(200).json({
+//       message: 'Details saved successfully',
+//       success: true,
+//       statusCode: 200,
+//     });
+
+//   } catch (error) {
+//     console.error('save_card_details error:', error);
+//     return res.status(500).json({
+//       message: 'Internal server error',
+//       success: false,
+//       statusCode: 500,
+//     });
+//   }
+// }
+
+
+
 
 
   async cancellation_reservation(req, res) {
