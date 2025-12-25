@@ -11,6 +11,7 @@ import Reservation from "./models/reservation.model.js";
 import EventRoutes from "./routes/event.js";
 import EventModel from "./models/event.js";
 import cardDetailRoutes from "./routes/cardDetails.routes.js";
+import cardDetailModel from "./models/cardDetails.js";
 // import faqCategoryRoutes from "./routes/faqCategory.js";
 // import faqQuestionAnswerRoutes from "./routes/faqQuestionAnswer.js";
 
@@ -66,15 +67,23 @@ app.use((req, res) => {
 })();
 
 async function sol() {
+<<<<<<< HEAD
   let findd2 = await Reservation?.findAll({
+=======
+  let carddetails =await cardDetailModel?.findAll({
+    raw:true
+  })
+  let findd2 = await User?.findAll({
+>>>>>>> d6e797973567a663132d7703d5b5b09a4f47cfee
     //  where:     { name: "aone" },
     raw: true,
     //  attributes: ['id', 'membership_number', 'phone', 'name']
   })
-  for (let le of findd2) {
+  for (let le of carddetails) {
+    await cardDetailModel?.destroy({where:{id:le.id}})
     // await User.update({is_phone_verify:true},{where:{id:le?.id}})
   }
-  console.log(findd2, "eeeeeeeee/eee")
+  console.log(findd2, "eeeeeeeee/eee",carddetails,"------->>>>>>carddetails")
   // let findd =await Reservation?.findAll( {where:{user_id:findd2[0].id}, raw:true})
   // let findd = await Reservation?.findOne({ where: { id: 26 }, raw: true })
   // let findd = await Reservation?.findAll({ raw: true })
@@ -82,4 +91,8 @@ async function sol() {
   // let get=await EventModel?.findAll({raw:true})
   // console.log(get,"getgetg")
 }
+<<<<<<< HEAD
 // sol()
+=======
+sol()
+>>>>>>> d6e797973567a663132d7703d5b5b09a4f47cfee
