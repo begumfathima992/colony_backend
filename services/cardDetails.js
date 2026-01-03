@@ -5,7 +5,9 @@ class cardDetails {
         try {
             let { CVV, cardExpiry, cardNumber,name } = req.body
             let userObj = req.userData
+            // console.log(userObj,"userObjuserObj===>>>")
             let findExist = await cardDetailModel?.findOne({ where: { cardNumber: cardNumber, user_id: userObj?.id }, raw: true })
+            console.log(findExist,"====>findExist")
             if (findExist && findExist?.id) {
                 return res.status(400).json({ message: "This card number exist", success: false, statusCode: 400 })
             }
@@ -24,7 +26,7 @@ class cardDetails {
         try {
             let userObj = req.userData
             let get = await cardDetailModel?.findAll({ where: { user_id: userObj?.id }, raw: true, order: [['id', 'DESC']] })
-            console.log(get,"gat backend====>>")
+            // console.log(get,"gat backend====>>")
             return res.status(200).json({ message: "Fetch data", data: get })
         } catch (error) {
             return res.status(500).json({ message: error?.message, statusCode: 500 })

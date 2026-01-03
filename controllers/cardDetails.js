@@ -9,13 +9,17 @@ const options = {
 
 class CardDetailController {
     async add(req, res) {
+        console.log(req.body,"====>card cont")
         try {
-            let { error } = cardDetailSchema.validate(req.body, options)
-            if (error) {
-                return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
-            }
+            // let { error } = cardDetailSchema.validate(req.body, options)
+            // console.log(error,"card error===>>")
+            // if (error) {
+
+            //     return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
+            // }
             await cardDetailsObj.add(req, res)
         } catch (error) {
+
             return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
         }
     }
