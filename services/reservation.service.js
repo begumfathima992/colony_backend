@@ -3,6 +3,7 @@ import Reservation from "../models/reservation.model.js";
 import stripe, { stripeWebhookSecret } from '../config/stripe.js'
 import env from "../config/environmentVariables.js";
 import cardDetailModel from "../models/cardDetails.js";
+import { createPaymentIntent, isWithin24Hours } from "../helper/extra.js";
 
 
 // import { Reservation } from '../models/index.model.js'; // central models import
@@ -294,48 +295,155 @@ class ReservationService {
   // =====================================================
   // 2️⃣ Store card info in reservation table
   // =====================================================
-  async storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId) {
-    const reservation = await Reservation.findByPk(reservationId);
+  // async storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId) {
+  //   const reservation = await Reservation.findByPk(reservationId);
 
-    if (!reservation) {
-      throw new Error("Reservation not found");
+  //   if (!reservation) {
+  //     throw new Error("Reservation not found");
+  //   }
+
+  //   await reservation.update({
+  //     stripeCustomerId,
+  //     stripePaymentMethodId,
+  //   });
+
+  //   return reservation;
+  // }
+
+
+
+
+
+// async storeCardDetails(req, res) {
+//   try {
+//     const { reservationId, stripeCustomerId, stripePaymentMethodId } = req.body;
+
+//     // 1. Find the specific reservation
+//     const reservation = await Reservation.findByPk(reservationId);
+
+//     if (!reservation) {
+//       console.error(`Reservation with ID ${reservationId} not found.`);
+//       return res.status(404).json({ success: false, message: "Reservation not found" });
+//     }
+
+//     // 2. Update using the exact column names from your provided model
+//     await reservation.update({
+//       stripeCustomerId: stripeCustomerId,      // Matches model
+//       stripePaymentMethodId: stripePaymentMethodId, // Matches model
+//     });
+
+//     console.log(`Success: Linked PM ${stripePaymentMethodId} to Reservation ${reservationId}`);
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Card details stored successfully",
+//     });
+
+//   } catch (err) {
+//     // This will print the exact SQL error (e.g., column does not exist)
+//     console.error("DATABASE UPDATE ERROR:", err); 
+//     return res.status(500).json({ 
+//       success: false, 
+//       message: "Failed to store card details",
+//       error: err.message 
+//     });
+//   }
+// }
+
+
+
+
+
+async storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId) {
+        try {
+            const reservation = await Reservation.findByPk(reservationId);
+
+            if (!reservation) {
+                throw new Error("Reservation not found in database");
+            }
+
+            // Update using exact column names from your Reservation Model
+            return await reservation.update({
+                stripeCustomerId: stripeCustomerId,
+                stripePaymentMethodId: stripePaymentMethodId,
+            });
+        } catch (error) {
+            console.error("Service Error:", error.message);
+            throw error; // Pass the error back to the controller
+        }
     }
 
-    await reservation.update({
-      stripeCustomerId,
-      stripePaymentMethodId,
-    });
-
-    return reservation;
-  }
 
   // =====================================================
   // 3️⃣ Charge late cancellation fee (£12)
   // =====================================================
-  async chargeLateFee(reservationId) {
-    const reservation = await Reservation.findByPk(reservationId);
+ async cancellation_reservation(req, res) {
+    try {
+        let { reservationId, cancel } = req.body;
+        
+        // 1. Find the reservation with the stored Stripe IDs
+        let reservation = await Reservation.findOne({ where: { id: reservationId } });
+        
+        if (!reservation) {
+            return res.status(404).json({ status: false, message: "Reservation not found" });
+        }
 
-    if (!reservation) {
-      throw new Error("Reservation not found");
+        // 2. Check if cancellation happens within the 24-hour window
+        let isLate = isWithin24Hours(reservation.date, reservation.time);
+
+        if (isLate) {
+            // Check if we have the cards to charge
+            if (!reservation.stripeCustomerId || !reservation.stripePaymentMethodId) {
+                return res.status(400).json({ 
+                    status: false, 
+                    message: "Late cancellation fee applies, but no saved card was found." 
+                });
+            }
+
+            // 3. Calculate Fee (e.g., £12 per person or static £12)
+            let perPersonCost = env.ZIGGY_PER_PERSON_FEE || 12;
+            let totalCost = Number(reservation.partySize) * Number(perPersonCost) * 100; // Multiply by 100 for cents/pence
+
+            // 4. Charge the saved card automatically
+            try {
+                const paymentIntent = await stripe.paymentIntents.create({
+                    amount: totalCost,
+                    currency: "gbp",
+                    customer: reservation.stripeCustomerId,
+                    payment_method: reservation.stripePaymentMethodId,
+                    off_session: true, // User is not looking at the app
+                    confirm: true,    // Charge immediately
+                    description: `Late cancellation fee for Reservation #${reservationId}`,
+                });
+
+                console.log("Stripe Auto-Charge Success:", paymentIntent.id);
+            } catch (stripeError) {
+                console.error("Stripe Charge Failed:", stripeError.message);
+                return res.status(402).json({ 
+                    status: false, 
+                    message: `Charge failed: ${stripeError.message}. Please contact support.` 
+                });
+            }
+        }
+
+        // 5. Update the Database status to Cancelled
+        // This runs for BOTH free cancellations and successful late-fee cancellations
+        await Reservation.update(
+            { reservationCancel: cancel }, 
+            { where: { id: reservationId } }
+        );
+
+        return res.status(200).json({ 
+            status: true,
+            message: isLate ? "Reservation cancelled and fee charged." : "Reservation cancelled successfully.",
+            requiresPayment: false // Frontend doesn't need to show Stripe Sheet
+        });
+
+    } catch (error) {
+        console.error("Cancellation Controller Error:", error);
+        return res.status(500).json({ status: false, message: error.message });
     }
-
-    if (!reservation.stripeCustomerId || !reservation.stripePaymentMethodId) {
-      throw new Error("Missing stored card details");
-    }
-
-    // Stripe charge £12 (1200 pence)
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: 1200,
-      currency: "gbp",
-      customer: reservation.stripeCustomerId,
-      payment_method: reservation.stripePaymentMethodId,
-      off_session: true,
-      confirm: true,
-      description: "Late cancellation / No-show fee",
-    });
-
-    return paymentIntent;
-  }
+}
 
 
 
@@ -343,247 +451,319 @@ class ReservationService {
   async deleteReservation(id) {
     return await Reservation.destroy({ where: { id } });
   }
-////////prabath sir code
- async save_card_details(req, res) {
-  try {
-    let { reservationId, phone, cardDetails, isAcceptCancellation, cardDetailId } = req.body;
-    let userData = req.userData;
 
-    // Find the reservation
-    let reservation = await Reservation.findOne({
-      where: { user_id: userData.id, id: reservationId },
-      raw: true
-    });
-
-    if (!reservation) {
-      return res.status(404).json({ message: 'Reservation not found', success: false, statusCode: 404 });
-    }
-
-    // ✅ If cardDetailId is missing, create it
-    // if (!cardDetailId) {
-    //   const newCard = await cardDetailModel.create({
-    //     cardNumber: cardDetails.cardNumber,
-    //     cardExpiry: cardDetails.cardExpiry,
-    //     CVV: cardDetails.CVV,
-    //     user_id: userData.id
-    //   });
-    //   cardDetailId = newCard.id;
-    // }
-
-    // Update reservation
-    await Reservation.update(
-      {
-        cardDetails,
-        isAcceptCancellation,
-        status: "CONFIRMED",
-        cardDetailId
-      },
-      { where: { id: reservationId, user_id: userData.id } }
-    );
-
-    return res.status(200).json({ message: 'Details saved successfully', success: true, statusCode: 200 });
-
-  } catch (error) {
-    console.error('save_card_details error:', error);
-    return res.status(500).json({ message: error.message, success: false, statusCode: 500 });
-  }
-}
-
-// async save_card_details(req, res) {
-//   try {
-//     const {
-//       reservationId,
-//       cardDetails,
-//       isAcceptCancellation,
-//       cardDetailId: incomingCardDetailId
-//     } = req.body;
-
-//     const userData = req.userData;
-
-//     // 1️⃣ Basic validations
-//     if (!reservationId) {
-//       return res.status(400).json({
-//         message: 'reservationId is required',
-//         success: false,
-//         statusCode: 400,
-//       });
-//     }
-
-//     if (!cardDetails || !cardDetails.cardNumber || !cardDetails.cardExpiry) {
-//       return res.status(400).json({
-//         message: 'Invalid card details',
-//         success: false,
-//         statusCode: 400,
-//       });
-//     }
-
-//     // 2️⃣ Find reservation
-//     const reservation = await Reservation.findOne({
-//       where: {
-//         id: reservationId,
-//         user_id: userData.id,
-//       },
-//     });
-
-//     if (!reservation) {
-//       return res.status(404).json({
-//         message: 'Reservation not found',
-//         success: false,
-//         statusCode: 404,
-//       });
-//     }
-
-//     // 3️⃣ Create card if cardDetailId not provided
-//     let cardDetailId = incomingCardDetailId;
-
-//     if (!cardDetailId) {
-//       const newCard = await cardDetailModel.create({
-//         user_id: userData.id,
-//         cardNumber: cardDetails.cardNumber,
-//         cardExpiry: cardDetails.cardExpiry,
-//         // ❌ DO NOT STORE CVV IN REAL APPS
-//         // CVV removed for security
-//       });
-
-//       cardDetailId = newCard.id;
-//     }
-
-//     // 4️⃣ Update reservation
-//     await Reservation.update(
-//       {
-//         cardDetailId,
-//         cardDetails, // ⚠️ acceptable for now since frontend expects it
-//         isAcceptCancellation: !!isAcceptCancellation,
-//         status: 'CONFIRMED',
-//       },
-//       {
-//         where: {
-//           id: reservationId,
-//           user_id: userData.id,
-//         },
-//       }
-//     );
-
-//     return res.status(200).json({
-//       message: 'Details saved successfully',
-//       success: true,
-//       statusCode: 200,
-//     });
-
-//   } catch (error) {
-//     console.error('save_card_details error:', error);
-//     return res.status(500).json({
-//       message: 'Internal server error',
-//       success: false,
-//       statusCode: 500,
-//     });
-//   }
-// }
-
-// async save_card_details(req, res) {
-//   try {
-//     const {
-//       reservationId,
-//       cardDetails,
-//       isAcceptCancellation,
-//       cardDetailId: incomingCardDetailId
-//     } = req.body;
-
-//     const userData = req.userData;
-
-//     // 1️⃣ Basic validations
-//     if (!reservationId) {
-//       return res.status(400).json({
-//         message: 'reservationId is required',
-//         success: false,
-//         statusCode: 400,
-//       });
-//     }
-
-//     if (!cardDetails || !cardDetails.cardNumber || !cardDetails.cardExpiry) {
-//       return res.status(400).json({
-//         message: 'Invalid card details',
-//         success: false,
-//         statusCode: 400,
-//       });
-//     }
-
-//     // 2️⃣ Find reservation
-//     const reservation = await Reservation.findOne({
-//       where: {
-//         id: reservationId,
-//         user_id: userData.id,
-//       },
-//     });
-
-//     if (!reservation) {
-//       return res.status(404).json({
-//         message: 'Reservation not found',
-//         success: false,
-//         statusCode: 404,
-//       });
-//     }
-
-//     // 3️⃣ Create card if cardDetailId not provided
-//     let cardDetailId = incomingCardDetailId;
-
-//     if (!cardDetailId) {
-//       const newCard = await cardDetailModel.create({
-//         user_id: userData.id,
-//         cardNumber: cardDetails.cardNumber,
-//         cardExpiry: cardDetails.cardExpiry,
-//         // ❌ DO NOT STORE CVV IN REAL APPS
-//         // CVV removed for security
-//       });
-
-//       cardDetailId = newCard.id;
-//     }
-
-//     // 4️⃣ Update reservation
-//     await Reservation.update(
-//       {
-//         cardDetailId,
-//         cardDetails, // ⚠️ acceptable for now since frontend expects it
-//         isAcceptCancellation: !!isAcceptCancellation,
-//         status: 'CONFIRMED',
-//       },
-//       {
-//         where: {
-//           id: reservationId,
-//           user_id: userData.id,
-//         },
-//       }
-//     );
-
-//     return res.status(200).json({
-//       message: 'Details saved successfully',
-//       success: true,
-//       statusCode: 200,
-//     });
-
-//   } catch (error) {
-//     console.error('save_card_details error:', error);
-//     return res.status(500).json({
-//       message: 'Internal server error',
-//       success: false,
-//       statusCode: 500,
-//     });
-//   }
-// }
-
-
-
-
-
-  async cancellation_reservation(req, res) {
+  async save_card_details(req, res) {
     try {
-      let { reservationId, cancel } = req.body
-      await Reservation?.update({ reservationCancel: cancel }, { where: { id: reservationId } })
-      return res.status(200).json({ message: "Reservation Cancelled", status: 200 })
+      let { reservationId, phone, cardDetails, isAcceptCancellation, cardDetailId } = req.body;
+      let userData = req.userData;
+
+      // Find the reservation
+      let reservation = await Reservation.findOne({
+        where: { user_id: userData.id, id: reservationId },
+        raw: true
+      });
+
+      if (!reservation) {
+        return res.status(404).json({ message: 'Reservation not found', success: false, statusCode: 404 });
+      }
+
+      // ✅ If cardDetailId is missing, create it
+      if (!cardDetailId) {
+        const newCard = await cardDetailModel.create({
+          cardNumber: cardDetails.cardNumber,
+          cardExpiry: cardDetails.cardExpiry,
+          CVV: cardDetails.CVV,
+          user_id: userData.id
+        });
+        cardDetailId = newCard.id;
+      }
+
+      // Update reservation
+      await Reservation.update(
+        {
+          cardDetails,
+          isAcceptCancellation,
+          status: "CONFIRMED",
+          cardDetailId
+        },
+        { where: { id: reservationId, user_id: userData.id } }
+      );
+
+      return res.status(200).json({ message: 'Details saved successfully', success: true, statusCode: 200 });
+
     } catch (error) {
-      return res.status(500).json({ message: error?.message, statusCode })
+      console.error('save_card_details error:', error);
+      return res.status(500).json({ message: error.message, success: false, statusCode: 500 });
     }
   }
+
+// async save_card_details(req, res) {
+//   try {
+//     const {
+//       reservationId,
+//       cardDetails,
+//       isAcceptCancellation,
+//       cardDetailId: incomingCardDetailId
+//     } = req.body;
+
+//     const userData = req.userData;
+
+//     // 1️⃣ Basic validations
+//     if (!reservationId) {
+//       return res.status(400).json({
+//         message: 'reservationId is required',
+//         success: false,
+//         statusCode: 400,
+//       });
+//     }
+
+//     if (!cardDetails || !cardDetails.cardNumber || !cardDetails.cardExpiry) {
+//       return res.status(400).json({
+//         message: 'Invalid card details',
+//         success: false,
+//         statusCode: 400,
+//       });
+//     }
+
+//     // 2️⃣ Find reservation
+//     const reservation = await Reservation.findOne({
+//       where: {
+//         id: reservationId,
+//         user_id: userData.id,
+//       },
+//     });
+
+//     if (!reservation) {
+//       return res.status(404).json({
+//         message: 'Reservation not found',
+//         success: false,
+//         statusCode: 404,
+//       });
+//     }
+
+//     // 3️⃣ Create card if cardDetailId not provided
+//     let cardDetailId = incomingCardDetailId;
+
+//     if (!cardDetailId) {
+//       const newCard = await cardDetailModel.create({
+//         user_id: userData.id,
+//         cardNumber: cardDetails.cardNumber,
+//         cardExpiry: cardDetails.cardExpiry,
+//         // ❌ DO NOT STORE CVV IN REAL APPS
+//         // CVV removed for security
+//       });
+
+//       cardDetailId = newCard.id;
+//     }
+
+//     // 4️⃣ Update reservation
+//     await Reservation.update(
+//       {
+//         cardDetailId,
+//         cardDetails, // ⚠️ acceptable for now since frontend expects it
+//         isAcceptCancellation: !!isAcceptCancellation,
+//         status: 'CONFIRMED',
+//       },
+//       {
+//         where: {
+//           id: reservationId,
+//           user_id: userData.id,
+//         },
+//       }
+//     );
+
+//     return res.status(200).json({
+//       message: 'Details saved successfully',
+//       success: true,
+//       statusCode: 200,
+//     });
+
+//   } catch (error) {
+//     console.error('save_card_details error:', error);
+//     return res.status(500).json({
+//       message: 'Internal server error',
+//       success: false,
+//       statusCode: 500,
+//     });
+//   }
+// }
+
+// async save_card_details(req, res) {
+//   try {
+//     const {
+//       reservationId,
+//       cardDetails,
+//       isAcceptCancellation,
+//       cardDetailId: incomingCardDetailId
+//     } = req.body;
+
+//     const userData = req.userData;
+
+//     // 1️⃣ Basic validations
+//     if (!reservationId) {
+//       return res.status(400).json({
+//         message: 'reservationId is required',
+//         success: false,
+//         statusCode: 400,
+//       });
+//     }
+
+//     if (!cardDetails || !cardDetails.cardNumber || !cardDetails.cardExpiry) {
+//       return res.status(400).json({
+//         message: 'Invalid card details',
+//         success: false,
+//         statusCode: 400,
+//       });
+//     }
+
+//     // 2️⃣ Find reservation
+//     const reservation = await Reservation.findOne({
+//       where: {
+//         id: reservationId,
+//         user_id: userData.id,
+//       },
+//     });
+
+//     if (!reservation) {
+//       return res.status(404).json({
+//         message: 'Reservation not found',
+//         success: false,
+//         statusCode: 404,
+//       });
+//     }
+
+//     // 3️⃣ Create card if cardDetailId not provided
+//     let cardDetailId = incomingCardDetailId;
+
+//     if (!cardDetailId) {
+//       const newCard = await cardDetailModel.create({
+//         user_id: userData.id,
+//         cardNumber: cardDetails.cardNumber,
+//         cardExpiry: cardDetails.cardExpiry,
+//         // ❌ DO NOT STORE CVV IN REAL APPS
+//         // CVV removed for security
+//       });
+
+//       cardDetailId = newCard.id;
+//     }
+
+//     // 4️⃣ Update reservation
+//     await Reservation.update(
+//       {
+//         cardDetailId,
+//         cardDetails, // ⚠️ acceptable for now since frontend expects it
+//         isAcceptCancellation: !!isAcceptCancellation,
+//         status: 'CONFIRMED',
+//       },
+//       {
+//         where: {
+//           id: reservationId,
+//           user_id: userData.id,
+//         },
+//       }
+//     );
+
+//     return res.status(200).json({
+//       message: 'Details saved successfully',
+//       success: true,
+//       statusCode: 200,
+//     });
+
+//   } catch (error) {
+//     console.error('save_card_details error:', error);
+//     return res.status(500).json({
+//       message: 'Internal server error',
+//       success: false,
+//       statusCode: 500,
+//     });
+//   }
+// }
+
+
+
+////////sir code
+
+  // async cancellation_reservation(req, res) {
+  //   try {
+  //     let { reservationId, cancel } = req.body
+  //     let get = await Reservation?.findOne({ where: { id: reservationId } })
+
+  //     let perPersonCost = env.ZIGGY_PER_PERSON_FEE
+  //     let totalCost = Number(get?.partySize) * Number(perPersonCost)
+  //     // console.log(totalCost, 'total costtttt')
+  //     let check = isWithin24Hours(get?.date, get?.time)
+
+  //     if (check) {
+  //       let chekcc = await createPaymentIntent(totalCost, reservationId)
+  //       if (chekcc && chekcc?.status == false) {
+  //         return res.status(404).json({
+  //           status: false,
+  //           message: "Reservation not found"
+  //         })
+  //       }
+  //     }
+  //     await Reservation?.update({ reservationCancel: cancel }, { where: { id: reservationId } })
+  //     return res.status(200).json({ message: "Reservation Cancelled", status: 200 })
+  //   } catch (error) {
+  //     return res.status(500).json({ message: error?.message, statusCode })
+  //   }
+  // }
+
+
+
+
+
+//   async cancellation_reservation(req, res) {
+//     try {
+//         let { reservationId, cancel } = req.body;
+        
+//         // 1. Find the reservation
+//         let get = await Reservation?.findOne({ where: { id: reservationId } });
+//         if (!get) {
+//             return res.status(404).json({ status: false, message: "Reservation not found" });
+//         }
+
+//         let perPersonCost = env.ZIGGY_PER_PERSON_FEE;
+//         let totalCost = Number(get?.partySize) * Number(perPersonCost);
+        
+//         // 2. Check if cancellation happens within the 24-hour window
+//         let check = isWithin24Hours(get?.date, get?.time);
+
+//       if (check) {
+//     let paymentData = await createPaymentIntent(totalCost, reservationId, get.user_id);
+//     console.log(paymentData,"paymentDatapaymentData===")
+//     // Check if paymentData actually contains the secret
+//     if (paymentData && paymentData.client_secret) {
+//         return res.status(200).json({
+//             status: true,
+//             requiresPayment: true,
+//             paymentIntent: paymentData.client_secret, // Must be the 'client_secret' string
+//             customer: paymentData.customer,           // Stripe Customer ID
+//             ephemeralKey: paymentData.ephemeralKey,   // Ephemeral Key
+//             message: "Payment required"
+//         });
+//     }
+// }
+
+//         // 5. If OUTSIDE 24 hours (no fee), update and cancel immediately
+//         await Reservation?.update(
+//             { reservationCancel: cancel }, 
+//             { where: { id: reservationId } }
+//         );
+
+//         return res.status(200).json({ 
+//             message: "Reservation Cancelled (No fee applied)", 
+//             status: 200,
+//             requiresPayment: false 
+//         });
+
+//     } catch (error) {
+//         return res.status(500).json({ message: error?.message, status: 500 });
+//     }
+// }
+
+
+
 
   async fetch_all_reservation(req, res) {
     try {
@@ -662,7 +842,6 @@ class ReservationService {
   }
 
   //CRUD card details 
-
 
 }
 

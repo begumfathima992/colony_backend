@@ -73,6 +73,8 @@ import stripe, { stripeWebhookSecret } from '../config/stripe.js'
 import { cancellationPolicy, dropdownOptions } from '../helper/staticData.js';
 import moment from 'moment';
 import { cancellation_reservation, cart_detail_save } from '../helper/validator/reservation.js';
+import Reservation from "../models/reservation.model.js";
+import { Op } from 'sequelize';
 
 class ReservationController {
   // STEP 1 — Create base reservation
@@ -289,7 +291,8 @@ class ReservationController {
 
   async createPayment(req, res) {
     try {
-      const { amount } = req.body;
+      console.log(req.body,"creae payment caled")
+      // const { amount } = req.body;
 
       const customer = await stripe.customers.create();
       console.log('Customer created:', customer.id);
@@ -299,7 +302,7 @@ class ReservationController {
       );
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount,
+        amount:"1000",
         currency: 'aed',
         customer: customer.id,
         automatic_payment_methods: { enabled: true },
@@ -432,7 +435,7 @@ class ReservationController {
     try {
       console.log(req.body, "bodyy====Eeeeeeeeeeeee")
       let { error } = cancellation_reservation.validate(req.body, options)
-      console.log(error, "Eeeeeeeeeeeee")
+      // console.log(error, "Eeeeeeeeeeeee")
       if (error) {
         return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
       }
@@ -441,6 +444,83 @@ class ReservationController {
       return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
     }
   }
+  //////////////getcarddata from reservation table
+   async getSavedCards(req, res) {
+   try {
+    const cards = await Reservation.findAll({
+      where: {
+        user_id: req.userData.id,
+        stripePaymentMethodId: { [Op.ne]: null },
+      },
+      attributes: ['stripePaymentMethodId', 'cardDetails'],
+      // group: ['stripePaymentMethodId', 'cardDetails'],
+      order: [['id', 'DESC']],
+      raw: true,
+    });
+
+    return res.json({ success: true, data: cards });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+  }
+  ///////////////final confiem
+
+
+
+
+  async finalizeReservation (req, res) {
+  try {
+    const user = req.userData;
+    const {
+      reservationId,
+      amount,
+      stripePaymentMethodId,
+      isAcceptCancellation,
+    } = req.body;
+
+    if (!reservationId || !stripePaymentMethodId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reservation ID and payment method required',
+      });
+    }
+
+    const reservation = await Reservation.findOne({
+      where: {
+        reservationId,
+        user_id: user.id,
+      },
+    });
+
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reservation not found',
+      });
+    }
+
+    await reservation.update({
+      stripePaymentMethodId,
+      isAcceptCancellation: !!isAcceptCancellation,
+      status: 'CONFIRMED',
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Reservation finalized successfully',
+      data: {
+        reservationId: reservation.reservationId,
+        status: reservation.status,
+      },
+    });
+  } catch (error) {
+    console.error('Finalize Reservation Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
   async fetch_all_reservation(req, res) {
     try {

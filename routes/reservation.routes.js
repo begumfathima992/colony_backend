@@ -13,7 +13,7 @@ router.put('/updateRes', authorize, reservationController.updateReservation);
 // ----------------------
 // Payments
 // ----------------------
-router.post("/create-payment-intent", authorize, reservationController.createPayment);
+router.post("/create-payment-intent", reservationController.createPayment);
 
 // **Webhook route should NOT use authorize**
 router.post("/webhook", express.raw({ type: 'application/json' }), reservationController.webHook);
@@ -25,8 +25,17 @@ router.post("/charge-late-fee", reservationController.chargeLateFee);
 
 router.put("/save_card_details",authorize, reservationController.save_card_details);
 
-router.put("/cancellation_reservation",authorize,reservationController.cancellation_reservation)
+router.put("/cancellation_reservation",reservationController.cancellation_reservation)
 router.get("/get_reservations",authorize,reservationController.fetch_all_reservation)
+
+/////carddata
+router.get(
+  '/get-saved-cards',
+authorize,
+  reservationController.getSavedCards
+);
+/////////
+router.put('/finalize', authorize, reservationController.finalizeReservation);
 // ----------------------
 // Optional Step 2 routes
 // ----------------------
