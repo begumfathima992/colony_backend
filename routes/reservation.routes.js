@@ -19,8 +19,17 @@ router.post("/create-payment-intent", reservationController.createPayment);
 router.post("/webhook", express.raw({ type: 'application/json' }), reservationController.webHook);
 
 
+
+
+
 router.post("/create-setup-intent", reservationController.createSetupIntent);
 router.post("/store-card", reservationController.storeCard);
+
+
+
+
+
+
 router.post("/charge-late-fee", reservationController.chargeLateFee);
 
 router.put("/save_card_details",authorize, reservationController.save_card_details);
