@@ -8,4 +8,8 @@ cardDetailRoutes.post("/add", authorize, CardDetailControllerObj.add)
 cardDetailRoutes.get("/get", authorize, CardDetailControllerObj.get)
 cardDetailRoutes.patch("/edit", authorize, CardDetailControllerObj.update)
 cardDetailRoutes.delete("/delete", authorize, CardDetailControllerObj.delete)
+
+// save  stripeCustomerId,stripePaymentMethodId
+cardDetailRoutes.patch("/edit_stripe_details", authorize, CardDetailControllerObj.edit_stripe_details)
+
 export default cardDetailRoutes

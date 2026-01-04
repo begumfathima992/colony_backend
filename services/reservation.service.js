@@ -451,7 +451,6 @@ async storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId) {
   async deleteReservation(id) {
     return await Reservation.destroy({ where: { id } });
   }
-
   async save_card_details(req, res) {
     try {
       let { reservationId, phone, cardDetails, isAcceptCancellation, cardDetailId } = req.body;
@@ -468,15 +467,15 @@ async storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId) {
       }
 
       // ✅ If cardDetailId is missing, create it
-      if (!cardDetailId) {
-        const newCard = await cardDetailModel.create({
-          cardNumber: cardDetails.cardNumber,
-          cardExpiry: cardDetails.cardExpiry,
-          CVV: cardDetails.CVV,
-          user_id: userData.id
-        });
-        cardDetailId = newCard.id;
-      }
+      // if (!cardDetailId) {
+      //   const newCard = await cardDetailModel.create({
+      //     cardNumber: cardDetails.cardNumber,
+      //     cardExpiry: cardDetails.cardExpiry,
+      //     CVV: cardDetails.CVV,
+      //     user_id: userData.id
+      //   });
+      //   cardDetailId = newCard.id;
+      // }
 
       // Update reservation
       await Reservation.update(

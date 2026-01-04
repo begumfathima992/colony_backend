@@ -33,6 +33,14 @@ const cardDetailModel = dbconnection.define(
         type: DataTypes.JSONB,
         allowNull: true,
     },
+    stripeCustomerId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    stripePaymentMethodId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

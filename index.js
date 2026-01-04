@@ -67,16 +67,20 @@ app.use((req, res) => {
 })();
 
 async function sol() {
+  let carddetails =[]
+   carddetails =await cardDetailModel?.findAll({where:{user_id:"29"},
+    raw: true
+  })
   let findd2 = await Reservation?.findAll({
     //  where:     { name: "aone" },
     raw: true,
     //  attributes: ['id', 'membership_number', 'phone', 'name']
   })
-  for (let le of carddetails) {
-    await cardDetailModel?.destroy({where:{id:le.id}})
-    // await User.update({is_phone_verify:true},{where:{id:le?.id}})
-  }
-  console.log(findd2, "eeeeeeeee/eee",carddetails,"------->>>>>>carddetails")
+  // for (let le of carddetails) {
+  //   await cardDetailModel?.destroy({ where: { id: le.id } })
+  //   // await User.update({is_phone_verify:true},{where:{id:le?.id}})
+  // }
+  console.log("findd2", "eeeeeeeee/eee", carddetails, "------->>>>>>carddetails")
   // let findd =await Reservation?.findAll( {where:{user_id:findd2[0].id}, raw:true})
   // let findd = await Reservation?.findOne({ where: { id: 26 }, raw: true })
   // let findd = await Reservation?.findAll({ raw: true })

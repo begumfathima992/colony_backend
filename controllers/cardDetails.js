@@ -1,4 +1,4 @@
-import { cardDeleteSchema, cardDetailEditSchema, cardDetailSchema } from "../helper/validator/cardDetail.js"
+import { cardDeleteSchema, cardDetailEditSchema, cardDetailSchema, editStripeCardSchema } from "../helper/validator/cardDetail.js"
 import cardDetailsObj from "../services/cardDetails.js"
 
 const options = {
@@ -9,7 +9,7 @@ const options = {
 
 class CardDetailController {
     async add(req, res) {
-        console.log(req.body,"====>card cont")
+        console.log(req.body, "====>card cont")
         try {
             // let { error } = cardDetailSchema.validate(req.body, options)
             // console.log(error,"card error===>>")
@@ -52,6 +52,21 @@ class CardDetailController {
             return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
         }
     }
+
+
+    async edit_stripe_details(req, res) {
+        try {
+            let { error } = editStripeCardSchema.validate(req.body, options)
+            if (error) {
+                return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
+            }
+            await cardDetailsObj.edit_stripe_details(req, res)
+        } catch (error) {
+            return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+        }
+    }
+
+
 }
 const CardDetailControllerObj = new CardDetailController()
 

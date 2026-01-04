@@ -19,3 +19,11 @@ export const cardDeleteSchema = Joi.object({
 })
 
 
+
+export const editStripeCardSchema = Joi.object({
+    id: Joi.number().required().label("id"),
+    stripeCustomerId: Joi.string().required().label("stripeCustomerId"),
+    stripePaymentMethodId: Joi.string().required().label("    stripePaymentMethodId")
+})
+
+
