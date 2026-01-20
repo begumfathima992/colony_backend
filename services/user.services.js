@@ -268,7 +268,7 @@ class UserService {
         res.status(400).json({ message: "new password and confirm password must be same", success: false, statusCode: 400 })
         return;
       } else if (current_password?.trim() == new_password?.trim()) {
-        res.status(400).json({ message: "cuu pass and new pass must not be same", success: false, statusCode: 400 })
+        res.status(400).json({ message: "current pass and new pass must not be same", success: false, statusCode: 400 })
         return;
       }
       let encrypt = await bcrypt.hash(new_password, salt);
