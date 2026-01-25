@@ -282,33 +282,144 @@ class ReservationService {
   // 1️⃣ Create SetupIntent — user enters card details
   // =====================================================
   async createSetupIntent(req, res) {
-    const customer = await stripe.customers.create();
+    // const customer = await stripe.customers.create();
+
+    // const setupIntent = await stripe.setupIntents.create({
+    //   customer: customer.id,
+    //   payment_method_types: ["card"],
+    // });
+
+    // return { setupIntent, customer };
+
+    try {
+    // Usually, you'd check if your User already has a stripeCustomerId in your DB
+    // const user = await User.findByPk(req.user.id);
+    // let customerId = user.stripeCustomerId;
+    
+    // If not, create one:
+    const customer = await stripe.customers.create({
+      metadata: { userId: req.user.id } // Helpful for tracking
+    });
 
     const setupIntent = await stripe.setupIntents.create({
       customer: customer.id,
       payment_method_types: ["card"],
+      usage: 'off_session', // Crucial for charging them later without them being present
     });
 
-    return { setupIntent, customer };
+    res.status(200).json({ 
+      clientSecret: setupIntent.client_secret, 
+      customer: customer.id 
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
   }
 
   // =====================================================
   // 2️⃣ Store card info in reservation table
   // =====================================================
-  // async storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId) {
-  //   const reservation = await Reservation.findByPk(reservationId);
+async storeCardDetails(req, res) {
+  try {
+    const { reservationId, stripeCustomerId, stripePaymentMethodId, name } = req.body;
+    
+    // 1. Find the reservation
+    const reservation = await Reservation.findByPk(reservationId);
+    if (!reservation) {
+      return res.status(404).json({ success: false, message: "Reservation not found" });
+    }
 
-  //   if (!reservation) {
-  //     throw new Error("Reservation not found");
-  //   }
+    // 2. Retrieve card details from Stripe (for display info)
+    const paymentMethod = await stripe.paymentMethods.retrieve(stripePaymentMethodId);
 
-  //   await reservation.update({
-  //     stripeCustomerId,
-  //     stripePaymentMethodId,
-  //   });
+    // 3. Handle Arrays for stripeCustomers and stripePaymentMethods
+    // If your DB uses JSON or ARRAY type, we initialize them as empty arrays if null
+    let customers = reservation.stripeCustomers || [];
+    let methods = reservation.stripePaymentMethods || [];
 
-  //   return reservation;
-  // }
+    // Add values only if they don't already exist in the array (prevents duplicates)
+    if (!customers.includes(stripeCustomerId)) {
+      customers.push(stripeCustomerId);
+    }
+    if (!methods.includes(stripePaymentMethodId)) {
+      methods.push(stripePaymentMethodId);
+    }
+
+    // 4. Update the Database
+    await reservation.update({
+      stripeCustomers: customers,       // Updated array
+      stripePaymentMethods: methods,    // Updated array
+      cardHolderName: name,             // The name entered in the UI
+      cardLast4: paymentMethod.card.last4,
+      cardBrand: paymentMethod.card.brand
+    });
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "Card saved successfully",
+      cardId: reservation.id // Or a specific card entry ID if you have a separate table
+    });
+
+  } catch (error) {
+    console.error("Store Card Error:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+
+  //////////////
+
+
+  
+async getSavedCards(req, res) {
+  try {
+    const { reservationId } = req.params;
+
+    // 1. Find the reservation
+    const reservation = await Reservation.findByPk(reservationId);
+
+    if (!reservation) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Reservation not found" 
+      });
+    }
+
+    // 2. Check if there is a primary card saved
+    // If your logic allows multiple cards, you would map through reservation.stripePaymentMethods
+    // For now, we return the primary active card stored on the reservation
+    if (!reservation.stripePaymentMethodId) {
+      return res.status(200).json({ 
+        success: true, 
+        data: [] // Return empty array so the frontend doesn't crash
+      });
+    }
+
+    // 3. Construct the card object for the frontend list
+    const savedCard = {
+      id: reservation.id, // Using reservation ID as a unique key for the list
+      name: reservation.cardHolderName || 'Card Holder',
+      last4: reservation.cardLast4,
+      brand: reservation.cardBrand,
+      paymentMethodId: reservation.stripePaymentMethodId,
+      customerId: reservation.stripeCustomerId
+    };
+
+    // Return as an array to match your frontend .map() logic
+    return res.status(200).json({ 
+      success: true, 
+      data: [savedCard] 
+    });
+
+  } catch (error) {
+    console.error("Get Saved Cards Error:", error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+}
+
 
 
 
@@ -354,96 +465,115 @@ class ReservationService {
 
 
 
-async storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId) {
-        try {
-            const reservation = await Reservation.findByPk(reservationId);
+// async storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId) {
+//         try {
+//             const reservation = await Reservation.findOne({where:{id:reservationId} ,raw:true} );
 
-            if (!reservation) {
-                throw new Error("Reservation not found in database");
-            }
+//             if (!reservation) {
+//                 throw new Error("Reservation not found in database");
+//             }
+// let tempArr=reservation?.stripeCustomerId||[]
+// let tempA2=reservation?.stripePaymentMethodId||[]
+// tempA2.push(stripePaymentMethodId)
+// tempArr.push(stripeCustomerId)
+//             // Update using exact column names from your Reservation Model
+//             return await reservation.update({
+//                 stripeCustomerId: tempArr,
+//                 stripePaymentMethodId: tempA2
+//             });
+//         } catch (error) {
+//             console.error("Service Error:", error.message);
+//             throw error; // Pass the error back to the controller
+//         }
+//     }
+    //////////////
+   async addCardDetails  (
+  reservationId,
+  stripeCustomerId,
+  stripePaymentMethodId,
+) {
+  const reservation = await Reservation.findOne({
+  where: { reservationId: reservationId },
+});
 
-            // Update using exact column names from your Reservation Model
-            return await reservation.update({
-                stripeCustomerId: stripeCustomerId,
-                stripePaymentMethodId: stripePaymentMethodId,
-            });
-        } catch (error) {
-            console.error("Service Error:", error.message);
-            throw error; // Pass the error back to the controller
-        }
-    }
+  if (!reservation) {
+    throw new Error('Reservation not found');
+  }
+
+  const customers = reservation.stripeCustomersID || [];
+  const methods = reservation.stripePaymentMethodsID || [];
+
+  // Avoid duplicates
+  if (!customers.includes(stripeCustomerId)) {
+    customers.push(stripeCustomerId);
+  }
+
+  if (!methods.includes(stripePaymentMethodId)) {
+    methods.push(stripePaymentMethodId);
+  }
+
+  await reservation.update({
+    stripeCustomers: customers,
+    stripePaymentMethods: methods,
+  });
+
+  return true;}
 
 
   // =====================================================
   // 3️⃣ Charge late cancellation fee (£12)
   // =====================================================
  async cancellation_reservation(req, res) {
-    try {
+   try {
         let { reservationId, cancel } = req.body;
-        
-        // 1. Find the reservation with the stored Stripe IDs
         let reservation = await Reservation.findOne({ where: { id: reservationId } });
         
         if (!reservation) {
             return res.status(404).json({ status: false, message: "Reservation not found" });
         }
 
-        // 2. Check if cancellation happens within the 24-hour window
         let isLate = isWithin24Hours(reservation.date, reservation.time);
 
         if (isLate) {
-            // Check if we have the cards to charge
-            if (!reservation.stripeCustomerId || !reservation.stripePaymentMethodId) {
+            // FIX: If the reservation doesn't have a specific card, 
+            // try to get the first one from the stripePaymentMethods array
+            const pmId = reservation.stripePaymentMethodId || 
+                         (reservation.stripePaymentMethods?.length > 0 ? reservation.stripePaymentMethods[0] : null);
+            
+            const cusId = reservation.stripeCustomerId || 
+                          (reservation.stripeCustomers?.length > 0 ? reservation.stripeCustomers[0] : null);
+
+            if (!cusId || !pmId) {
                 return res.status(400).json({ 
                     status: false, 
                     message: "Late cancellation fee applies, but no saved card was found." 
                 });
             }
 
-            // 3. Calculate Fee (e.g., £12 per person or static £12)
             let perPersonCost = env.ZIGGY_PER_PERSON_FEE || 12;
-            let totalCost = Number(reservation.partySize) * Number(perPersonCost) * 100; // Multiply by 100 for cents/pence
+            let totalCost = Number(reservation.partySize) * Number(perPersonCost) * 100;
 
-            // 4. Charge the saved card automatically
             try {
-                const paymentIntent = await stripe.paymentIntents.create({
+                await stripe.paymentIntents.create({
                     amount: totalCost,
                     currency: "gbp",
-                    customer: reservation.stripeCustomerId,
-                    payment_method: reservation.stripePaymentMethodId,
-                    off_session: true, // User is not looking at the app
-                    confirm: true,    // Charge immediately
+                    customer: cusId,
+                    payment_method: pmId,
+                    off_session: true, 
+                    confirm: true,    
                     description: `Late cancellation fee for Reservation #${reservationId}`,
                 });
-
-                console.log("Stripe Auto-Charge Success:", paymentIntent.id);
             } catch (stripeError) {
-                console.error("Stripe Charge Failed:", stripeError.message);
-                return res.status(402).json({ 
-                    status: false, 
-                    message: `Charge failed: ${stripeError.message}. Please contact support.` 
-                });
+                return res.status(402).json({ status: false, message: stripeError.message });
             }
         }
 
-        // 5. Update the Database status to Cancelled
-        // This runs for BOTH free cancellations and successful late-fee cancellations
-        await Reservation.update(
-            { reservationCancel: cancel }, 
-            { where: { id: reservationId } }
-        );
-
-        return res.status(200).json({ 
-            status: true,
-            message: isLate ? "Reservation cancelled and fee charged." : "Reservation cancelled successfully.",
-            requiresPayment: false // Frontend doesn't need to show Stripe Sheet
-        });
+        await Reservation.update({ reservationCancel: cancel }, { where: { id: reservationId } });
+        return res.status(200).json({ status: true, message: "Cancelled successfully." });
 
     } catch (error) {
-        console.error("Cancellation Controller Error:", error);
         return res.status(500).json({ status: false, message: error.message });
-    }
-}
+    }}
 
 
 
@@ -841,6 +971,47 @@ async storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId) {
   }
 
   //CRUD card details 
+async customerAndPayment(req, res) {
+  try {
+    const { customerId, paymentId, id } = req.body;
+    
+    // Find the exact row shown in your pgAdmin screenshot
+    const reservation = await Reservation.findByPk(id);
+    
+    if (!reservation) {
+      return res.status(404).json({ success: false, message: "Reservation record not found" });
+    }
+
+    // 1. Create fresh copies to avoid reference issues
+    let currentMethods = Array.isArray(reservation.stripePaymentMethods) ? [...reservation.stripePaymentMethods] : [];
+    let currentCustomers = Array.isArray(reservation.stripeCustomers) ? [...reservation.stripeCustomers] : [];
+
+    // 2. Filter out the IDs
+    const updatedMethods = currentMethods.filter(pm => pm !== paymentId);
+    const updatedCustomers = currentCustomers.filter(cus => cus !== customerId);
+
+    // 3. Update the object properties
+    reservation.stripePaymentMethods = updatedMethods;
+    reservation.stripeCustomers = updatedCustomers;
+
+    // 4. FORCE SEQUELIZE TO SEE THE CHANGE
+    // This is mandatory for JSONB columns in Sequelize
+    reservation.changed('stripePaymentMethods', true);
+    reservation.changed('stripeCustomers', true);
+
+    // 5. Save and wait for the DB to commit
+    await reservation.save();
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "Card removed from database successfully",
+      data: updatedMethods 
+    });
+  } catch (error) {
+    console.error("Database Delete Error:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
 
 }
 

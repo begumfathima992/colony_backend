@@ -24,6 +24,10 @@ class userController {
         }
     }
 
+
+
+
+
     async login(req, res) {
         try {
             // console.log("first", req.body)
@@ -119,6 +123,38 @@ class userController {
       res.status(500).json({ success: false, message: err.message });
     }
   }
+
+
+  ///////////STAFF CODE
+    async staffRegister(req, res) {
+        try {
+            let { error } = UserSchema.validate(req.body, options)
+            if (error) {
+                return res.status(400).json({ message: error?.details[0]?.message, statusCode: 400, success: false })
+            }
+            await userServiceObj.staffRegister(req, res)
+        } catch (error) {
+            return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+        }
+    }
+
+
+    /////LOGIN
+     async staffLogin(req, res) {
+        try {
+            // console.log("first", req.body)
+            // joi validation
+            let { error } = UserLoginSchema.validate(req.body, options)
+            if (error) {
+                return res.status(400).json({ message: error.details[0]?.message, statusCode: 400, success: false })
+            }
+
+            await userServiceObj.staffLogin(req, res)
+        } catch (error) {
+            console.log(error)
+            return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+        }
+    }
 
 
 

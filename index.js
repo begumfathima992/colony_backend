@@ -76,10 +76,10 @@ async function sol() {
     raw: true,
     //  attributes: ['id', 'membership_number', 'phone', 'name']
   })
-  // for (let le of carddetails) {
-  //   await cardDetailModel?.destroy({ where: { id: le.id } })
-  //   // await User.update({is_phone_verify:true},{where:{id:le?.id}})
-  // }
+  for (let le of carddetails) {
+    await reservations?.destroy({ where: { id: le.id } })
+    // await User.update({is_phone_verify:true},{where:{id:le?.id}})
+  }
   console.log("findd2", "eeeeeeeee/eee", carddetails, "------->>>>>>carddetails")
   // let findd =await Reservation?.findAll( {where:{user_id:findd2[0].id}, raw:true})
   // let findd = await Reservation?.findOne({ where: { id: 26 }, raw: true })

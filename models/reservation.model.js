@@ -71,15 +71,18 @@ Reservation.init(
     userNotes: {
       type: DataTypes.STRING,
       allowNull: true,
-    },
-    stripeCustomerId: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    stripePaymentMethodId: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
+    },        
+  stripeCustomers: {
+  type: DataTypes.JSON,   // ARRAY
+  allowNull: true,
+  defaultValue: [],
+},
+
+stripePaymentMethods: {
+  type: DataTypes.JSON,   // ARRAY
+  allowNull: true,
+  defaultValue: [],
+},
     status: {
       type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'CANCELLED'),
       defaultValue: 'PENDING',
@@ -111,7 +114,31 @@ Reservation.init(
     cardDetailId: {
       type: DataTypes.STRING,
       allowNull: true
-    }
+    },
+ // models/Reservation.js
+
+// 1. Single active card for this specific booking
+stripePaymentMethodId: {
+  type: DataTypes.STRING,
+  allowNull: true,
+},
+stripeCustomerId: {
+  type: DataTypes.STRING,
+  allowNull: true,
+},
+
+// 2. The list of ALL cards available for this reservation
+stripePaymentMethods: {
+  type: DataTypes.JSONB, 
+  allowNull: true,
+  defaultValue: [], // Start with an empty list
+},
+stripeCustomers: {
+  type: DataTypes.JSONB,
+  allowNull: true,
+  defaultValue: [],
+}
+
   },
   {
     sequelize,

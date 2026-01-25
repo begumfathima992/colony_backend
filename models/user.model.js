@@ -12,10 +12,10 @@ User.init(
     birthday_date: DataTypes.STRING,
     membership_number: DataTypes.STRING,
     access_token: DataTypes.TEXT,
-    otp: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
+    // otp: {
+    //   type: DataTypes.STRING,
+    //   allowNull: true,
+    // },
     otpExpiry: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -23,8 +23,19 @@ User.init(
     is_phone_verify: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
-    }
+    },
+    role: {
+      type: DataTypes.STRING,
+      defaultValue: 'customer',
+    },
+    staff_login_id: {
+      type: DataTypes.STRING,
+      unique: true,
+      allowNull: true,
+    },
   },
+
+  
   {
     sequelize,
     modelName: 'User',

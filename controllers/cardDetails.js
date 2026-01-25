@@ -11,6 +11,7 @@ class CardDetailController {
     async add(req, res) {
         console.log(req.body, "====>card cont")
         try {
+            const{stripeCustomerId, stripePaymentMethodId} =req.body
             // let { error } = cardDetailSchema.validate(req.body, options)
             // console.log(error,"card error===>>")
             // if (error) {

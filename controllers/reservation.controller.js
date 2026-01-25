@@ -352,20 +352,23 @@ class ReservationController {
   // 1️⃣ Create SetupIntent — collect card without charging
   // =====================================================
   async createSetupIntent(req, res) {
-    try {
-      const { setupIntent, customer } = await reservationServiceObj.createSetupIntent(req, res);
+   try {
+      // Create a new customer in Stripe
+      const customer = await stripe.customers.create();
 
-      res.status(200).json({
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customer.id,
+        payment_method_types: ["card"],
+      });
+
+      return res.status(200).json({
         success: true,
         clientSecret: setupIntent.client_secret,
         customer: customer.id,
-      }
-      );
-      return;
-    } catch (err) {
-      console.error("SetupIntent Error:", err);
-      res.status(500).json({ success: false, message: "Failed to create SetupIntent" });
-      return;
+      });
+    } catch (error) {
+      console.error("SetupIntent Error:", error);
+      return res.status(500).json({ success: false, message: error.message });
     }
 
   }
@@ -373,26 +376,280 @@ class ReservationController {
   // =====================================================
   // 2️⃣ Store card details with reservation
   // =====================================================
-  async storeCard(req, res) {
-    try {
-      const { reservationId, stripeCustomerId, stripePaymentMethodId } = req.body;
 
-      if (!reservationId || !stripeCustomerId || !stripePaymentMethodId) {
-        return res.status(400).json({ success: false, message: "Missing required fields" });
-      }
 
-      await reservationServiceObj.storeCardDetails(reservationId, stripeCustomerId, stripePaymentMethodId);
+async storeCard(req, res) {
+  // try {
+  //   const { reservationId, stripeCustomerId, stripePaymentMethodId } = req.body;
+  //   const reservation = await Reservation.findByPk(reservationId);
 
-      res.status(200).json({
-        success: true,
-        message: "Card details stored successfully",
-      });
-    } catch (err) {
-      console.error("Store Card Error:", err);
-      res.status(500).json({ success: false, message: "Failed to store card details" });
+  //   if (!reservation) {
+  //     return res.status(404).json({ success: false, message: "Reservation not found" });
+  //   }
+
+  //   // --- STRIPE ATTACHMENT LOGIC (THE FIX) ---
+  //   try {
+  //     // Attach the payment method to the customer so it can be charged later
+  //     await stripe.paymentMethods.attach(stripePaymentMethodId, {
+  //       customer: stripeCustomerId,
+  //     });
+
+  //     // Optional: Set as default for this customer to make future charges easier
+  //     await stripe.customers.update(stripeCustomerId, {
+  //       invoice_settings: {
+  //         default_payment_method: stripePaymentMethodId,
+  //       },
+  //     });
+  //   } catch (stripeError) {
+  //     // If card is already attached, Stripe might throw an error. 
+  //     // We check if it's a "already attached" error; if so, we continue.
+  //     if (stripeError.message.indexOf("already attached") === -1) {
+  //       throw stripeError;
+  //     }
+  //   }
+  //   // ----------------------------------------
+
+  //   // 1. Get existing arrays
+  //   let existingMethods = reservation.stripePaymentMethods || [];
+  //   let existingCustomers = reservation.stripeCustomers || [];
+
+  //   // 2. Add the new card only if it's not already in the list
+  //   if (!existingMethods.includes(stripePaymentMethodId)) {
+  //     existingMethods.push(stripePaymentMethodId);
+  //   }
+  //   if (!existingCustomers.includes(stripeCustomerId)) {
+  //     existingCustomers.push(stripeCustomerId);
+  //   }
+
+  //   // 3. Update the record
+  //   await Reservation.update({
+  //     stripePaymentMethodId: stripePaymentMethodId, 
+  //     stripeCustomerId: stripeCustomerId,           
+  //     stripePaymentMethods: [...existingMethods], 
+  //     stripeCustomers: [...existingCustomers]     
+  //   }, { where: { id: reservationId } });
+
+  //   res.status(200).json({ success: true, message: "Card added and attached successfully" });
+  // } catch (error) {
+  //   console.error("StoreCard Error:", error);
+  //   res.status(500).json({ error: error.message });
+  // }
+
+
+
+  try {
+    const { reservationId, stripeCustomerId, stripePaymentMethodId } = req.body;
+    const reservation = await Reservation.findByPk(reservationId);
+
+    if (!reservation) {
+      return res.status(404).json({ success: false, message: "Reservation not found" });
     }
-  }
 
+    // --- STRIPE ATTACHMENT LOGIC (THE FIX) ---
+    try {
+      // Attach the payment method to the customer so it can be charged later
+      await stripe.paymentMethods.attach(stripePaymentMethodId, {
+        customer: stripeCustomerId,
+      });
+
+      // Optional: Set as default for this customer to make future charges easier
+      await stripe.customers.update(stripeCustomerId, {
+        invoice_settings: {
+          default_payment_method: stripePaymentMethodId,
+        },
+      });
+    } catch (stripeError) {
+      // If card is already attached, Stripe might throw an error. 
+      // We check if it's a "already attached" error; if so, we continue.
+      if (stripeError.message.indexOf("already attached") === -1) {
+        throw stripeError;
+      }
+    }
+    // ----------------------------------------
+
+    // 1. Get existing arrays
+    let existingMethods = reservation.stripePaymentMethods || [];
+    let existingCustomers = reservation.stripeCustomers || [];
+
+    // 2. Add the new card only if it's not already in the list
+    if (!existingMethods.includes(stripePaymentMethodId)) {
+      existingMethods.push(stripePaymentMethodId);
+    }
+    if (!existingCustomers.includes(stripeCustomerId)) {
+      existingCustomers.push(stripeCustomerId);
+    }
+
+    // 3. Update the record
+    await Reservation.update({
+      stripePaymentMethodId: stripePaymentMethodId, 
+      stripeCustomerId: stripeCustomerId,           
+      stripePaymentMethods: [...existingMethods], 
+      stripeCustomers: [...existingCustomers]     
+    }, { where: { id: reservationId } });
+
+    res.status(200).json({ success: true, message: "Card added and attached successfully" });
+  } catch (error) {
+    console.error("StoreCard Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+
+  ////////
+
+  // controllers/ReservationController.js
+
+async saveCardDetails(req, res) {
+  try {
+    const { 
+      reservationId, 
+      stripePaymentMethodId, 
+      stripeCustomerId, // <--- ADD THIS to your request body
+      isAcceptCancellation 
+    } = req.body;
+
+    if (!reservationId || !stripePaymentMethodId) {
+      return res.status(400).json({ success: false, message: "Missing IDs" });
+    }
+
+    const reservation = await Reservation.findByPk(reservationId);
+    if (!reservation) {
+      return res.status(404).json({ success: false, message: "Reservation not found" });
+    }
+
+    // UPDATE: Save BOTH IDs to the reservation row
+    await reservation.update({
+      stripePaymentMethodId: stripePaymentMethodId,
+      stripeCustomerId: stripeCustomerId, // <--- CRITICAL FIX
+      isAcceptCancellation: isAcceptCancellation || true,
+      cancellationPolicyAccepted: true,
+      status: 'CONFIRMED'
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Reservation confirmed and card linked successfully"
+    });
+  } catch (error) {
+    console.error("Save Card Details Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+
+
+
+
+
+  //////////////////
+
+
+  //////////////
+
+
+
+
+
+// async getSavedCards(req, res) {
+//   try {
+//     const { id: userId } = req.userData;
+
+//     const reservation = await Reservation.findAll({
+//       where: { user_id: userId },
+//       attributes: ['id', 'stripePaymentMethods', 'stripeCustomers'],
+//       order: [['createdAt', 'DESC']],
+//     });
+
+//     if (!reservation) {
+//       return res.status(200).json({
+//         success: true,
+//         data: {
+//           stripePaymentMethods: [],
+//           stripeCustomers: [],
+//         },
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       data: reservation,
+//     });
+
+//   } catch (error) {
+//     console.error("GetSavedCards Error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// }
+
+
+
+
+
+// Import stripe at the top of your controller file
+
+
+
+
+async getSavedCards(req, res) {
+  try {
+    const { id: userId } = req.userData;
+
+    // 1. Fetch ALL reservations for this user
+    const reservations = await Reservation.findAll({
+      where: { user_id: userId },
+      attributes: ['stripePaymentMethods'],
+      raw: true,
+    });
+
+    // 2. Extract and Flatten the IDs
+    // We take all arrays from all reservations and merge them into one flat array
+    let allPmIds = [];
+    reservations.forEach(res => {
+      if (res.stripePaymentMethods && Array.isArray(res.stripePaymentMethods)) {
+        allPmIds = [...allPmIds, ...res.stripePaymentMethods];
+      }
+    });
+
+    // 3. Remove Duplicates
+    // A user might have used the same card for 5 different reservations
+    const uniquePmIds = [...new Set(allPmIds)];
+
+    if (uniquePmIds.length === 0) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    // 4. Fetch real details from Stripe for each unique ID
+  const cardDetails = await Promise.all(
+  uniquePmIds.map(async (pmId) => {
+    try {
+      const pm = await stripe.paymentMethods.retrieve(pmId);
+      return {
+        stripePaymentMethodId: pm.id,
+        stripeCustomerId: pm.customer, // <--- ADD THIS LINE
+        brand: pm.card.brand,
+        last4: pm.card.last4,
+        // ...
+      };
+    } catch (err) { return null; }
+  })
+);
+
+    // 5. Filter out failures and return the list
+    const finalCards = cardDetails.filter(card => card !== null);
+
+    return res.status(200).json({
+      success: true,
+      data: finalCards,
+    });
+
+  } catch (error) {
+    console.error("GetSavedCards Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
   // =====================================================
   // 3️⃣ Charge £12 late cancellation / no-show fee
   // =====================================================
@@ -445,24 +702,24 @@ class ReservationController {
     }
   }
   //////////////getcarddata from reservation table
-   async getSavedCards(req, res) {
-   try {
-    const cards = await Reservation.findAll({
-      where: {
-        user_id: req.userData.id,
-        stripePaymentMethodId: { [Op.ne]: null },
-      },
-      attributes: ['stripePaymentMethodId', 'cardDetails'],
-      // group: ['stripePaymentMethodId', 'cardDetails'],
-      order: [['id', 'DESC']],
-      raw: true,
-    });
+  //  async getSavedCards(req, res) {
+  //  try {
+  //   const cards = await Reservation.findAll({
+  //     where: {
+  //       user_id: req.userData.id,
+  //       stripePaymentMethodId: { [Op.ne]: null },
+  //     },
+  //     attributes: ['stripePaymentMethodId', 'cardDetails'],
+  //     // group: ['stripePaymentMethodId', 'cardDetails'],
+  //     order: [['id', 'DESC']],
+  //     raw: true,
+  //   });
 
-    return res.json({ success: true, data: cards });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-  }
+  //   return res.json({ success: true, data: cards });
+  // } catch (err) {
+  //   return res.status(500).json({ message: err.message });
+  // }
+  // }
   ///////////////final confiem
 
 
@@ -530,7 +787,13 @@ class ReservationController {
       return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
     }
   }
-
+async delete_data(req,res){
+  try {
+  await  reservationServiceObj.customerAndPayment(req,res)
+  } catch (error) {
+    
+  }
+}
 }
 
 const reservationController = new ReservationController();

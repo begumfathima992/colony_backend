@@ -11,4 +11,9 @@ userRoutes.post("/verify-otp", userControllerObj.verify_otp)
 
 
 userRoutes.put("/change_password", authorize, userControllerObj.change_password)
+userRoutes.post("/staff-register", userControllerObj.staffRegister)
+userRoutes.post("/staff-login", userControllerObj.staffLogin)
+
+
+
 export default userRoutes

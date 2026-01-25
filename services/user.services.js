@@ -166,21 +166,30 @@ class UserService {
       }
 
       // Find user by email OR membership number
-      let find = await userModel.findOne({
-        where: {
-          [Op.and]: [
-            {
-              [Op.or]: [
-                { phone: loginField, is_phone_verify: true },
-                { membership_number: loginField }
-              ]
-            },
-            { is_phone_verify: true }
-          ]
-        },
-        raw: true
-      });
+      // let find = await userModel.findOne({
+      //   where: {
+      //     [Op.and]: [
+      //       {
+      //         [Op.or]: [
+      //           { phone: loginField, is_phone_verify: true },
+      //           { membership_number: loginField }
+      //         ]
+      //       },
+      //       { is_phone_verify: true }
+      //     ]
+      //   },
+      //   raw: true
+      // });
 
+      let find = await userModel.findOne({
+  where: {
+    [Op.or]: [
+      { phone: loginField },
+      { membership_number: loginField }
+    ]
+  },
+  raw: true
+});
       if (!find) {
         return res.status(400).json({
           message: "User not found, kindly register first",
@@ -511,7 +520,146 @@ class UserService {
   //         return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
   //     }
   // }
-  /////////
+  /////////STAFF CODE
+
+
+  async staffRegister(req, res) {
+  try {
+    let { name, phone, password } = req.body;
+
+    // 1. Check if phone exists (any role)
+    let findMobileExist = await userModel.findOne({
+      where: { phone },
+      raw: true,
+      attributes: ["id"],
+    });
+
+    if (findMobileExist) {
+      return res.status(400).json({
+        message: `Phone number ${phone} is already in use.`,
+        success: false,
+      });
+    }
+
+    // 2. Fetch last staff_login_id (NOT membership_number)
+    let lastStaff = await userModel.findOne({
+      where: { role: 'staff' }, // Only look at staff records
+      order: [["id", "DESC"]],
+      raw: true,
+      attributes: ["id", "staff_login_id"],
+    });
+
+    // 3. Apply Staff ID Logic (Start at 500501)
+    let newStaffId;
+    if (lastStaff && lastStaff.staff_login_id) {
+      newStaffId = String(Number(lastStaff.staff_login_id) + 1);
+    } else {
+      newStaffId = "500501"; // Starting point for staff
+    }
+
+    // 4. Hash password
+    let encrypt = await bcrypt.hash(password, salt);
+
+    // 5. Create Staff Object
+    let obj = {
+      name,
+      phone,
+      password: encrypt,
+      role: 'staff',
+      staff_login_id: newStaffId,
+      is_phone_verify: true // Staff are pre-verified
+    };
+
+    await userModel.create(obj);
+
+    return res.status(201).json({
+      message: "Staff registration success",
+      data: { staffId: newStaffId },
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error?.message,
+      success: false,
+    });
+  }
+}
+//////STAFF LOGIN 
+async staffLogin(req, res) {
+  try {
+    let { loginField, password } = req.body; // loginField can be phone or staff_login_id
+
+    if (!loginField || !password) {
+      return res.status(400).json({
+        message: "Login ID/Phone and password are required",
+        success: false,
+        statusCode: 400
+      });
+    }
+
+    // 1. Find user where role is 'staff' AND (phone matches OR staff_id matches)
+    let find = await userModel.findOne({
+      where: {
+        [Op.and]: [
+          {
+            [Op.or]: [
+              { phone: loginField },
+              { staff_login_id: loginField }
+            ]
+          },
+          { role: 'staff' } // Strict check: only allow staff
+        ]
+      },
+      raw: true
+    });
+
+    if (!find) {
+      return res.status(401).json({
+        message: "Staff account not found or unauthorized",
+        success: false,
+        statusCode: 401
+      });
+    }
+
+    // 2. Check password using bcrypt
+    let checkPassword = await bcrypt.compare(password, find.password);
+    if (!checkPassword) {
+      return res.status(401).json({
+        message: "Invalid password",
+        success: false,
+        statusCode: 401
+      });
+    }
+
+    // 3. Remove sensitive info before generating token
+    delete find.password;
+    delete find.access_token;
+
+    // 4. Generate token
+    let access_token = generateAccessToken(find);
+
+    // 5. Save access token in DB
+    await userModel.update({ access_token }, { where: { id: find.id } });
+
+    find.access_token = access_token;
+
+    return res.status(200).json({
+      message: "Staff Login Success",
+      data: find,
+      statusCode: 200,
+      success: true
+    });
+
+  } catch (error) {
+    console.log(error, "Staff Login Error");
+    return res.status(500).json({
+      message: error?.message,
+      statusCode: 500,
+      success: false
+    });
+  }
+}
+
 
 
 }

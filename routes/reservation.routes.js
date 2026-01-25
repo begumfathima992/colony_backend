@@ -24,6 +24,14 @@ router.post("/webhook", express.raw({ type: 'application/json' }), reservationCo
 
 router.post("/create-setup-intent", reservationController.createSetupIntent);
 router.post("/store-card", reservationController.storeCard);
+router.get(
+  '/get_by_id',
+authorize,
+  reservationController.getSavedCards
+);
+router.put('/save_card_details',  authorize, reservationController.saveCardDetails);
+
+router.delete('/delete_data', authorize, reservationController.delete_data);
 
 
 
@@ -38,13 +46,10 @@ router.put("/cancellation_reservation",reservationController.cancellation_reserv
 router.get("/get_reservations",authorize,reservationController.fetch_all_reservation)
 
 /////carddata
-router.get(
-  '/get-saved-cards',
-authorize,
-  reservationController.getSavedCards
-);
+
 /////////
 router.put('/finalize', authorize, reservationController.finalizeReservation);
+
 // ----------------------
 // Optional Step 2 routes
 // ----------------------
