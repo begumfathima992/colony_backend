@@ -277,7 +277,7 @@ class UserService {
         res.status(400).json({ message: "new password and confirm password must be same", success: false, statusCode: 400 })
         return;
       } else if (current_password?.trim() == new_password?.trim()) {
-        res.status(400).json({ message: "cuu pass and new pass must not be same", success: false, statusCode: 400 })
+        res.status(400).json({ message: "current pass and new pass must not be same", success: false, statusCode: 400 })
         return;
       }
       let encrypt = await bcrypt.hash(new_password, salt);
@@ -446,8 +446,6 @@ class UserService {
   }
 
 
-
-
   async verify_otp(req, res) {
     try {
       const { phone, code, membership_number } = req.body;
@@ -489,7 +487,6 @@ class UserService {
       res.status(500).json({ success: false, message: err.message });
     }
   }
-
 
 
   ////////////
@@ -661,6 +658,61 @@ async staffLogin(req, res) {
 }
 
 
+  async edit_profile(req, res) {
+    try {
+      let { name,
+        phone,
+        anniversary_date,
+        birthday_date,
+        title,
+        gender,
+        nationality,
+        workNumber,
+        homeNumber,
+        addressLineOne,
+        addressLinetwo,
+        addressLinethree,
+        city,
+        country
+      } = req.body
+
+      let userData = req.userData
+      let findObj = await userModel?.findOne({ where: { id: userData.id }, raw: true })
+
+      let obj = {
+        name: name || findObj?.name,
+        phone: phone || findObj?.phone,
+        anniversary_date: anniversary_date || findObj?.anniversary_date,
+        birthday_date: birthday_date || findObj?.birthday_date,
+        title: title || findObj?.title,
+        gender: gender || findObj?.gender,
+        nationality: nationality || findObj?.nationality,
+        workNumber: workNumber || findObj?.workNumber,
+        homeNumber: homeNumber || findObj?.homeNumber,
+        addressLineOne: addressLineOne || findObj?.addressLineOne,
+        addressLinetwo: addressLinetwo || findObj?.addressLinetwo,
+        addressLinethree: addressLinethree || findObj?.addressLinethree,
+        city: city || findObj?.city,
+        country: country || findObj?.country
+      }
+      await userModel.update(obj, { where: { id: userData.id } })
+      return res.status(200).json({ message: "Data updated", statusCode: 200, success: true })
+    } catch (error) {
+      return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+    }
+  }
+  async get_profile(req, res) {
+    try {
+
+      let userData = req.userData
+      let findObj = await userModel?.findOne({ where: { id: userData.id }, raw: true })
+      return res.status(200).json({ message: "Data fetched", statusCode: 200, success: true, data: findObj })
+
+    } catch (error) {
+      return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
+
+    }
+  }
 
 }
 const userServiceObj = new UserService()

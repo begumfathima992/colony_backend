@@ -15,5 +15,8 @@ userRoutes.post("/staff-register", userControllerObj.staffRegister)
 userRoutes.post("/staff-login", userControllerObj.staffLogin)
 
 
+userRoutes.put("/edit_profile", authorize, userControllerObj.edit_profile)
+userRoutes.get("/get_profile", authorize, userControllerObj.get_profile)
+
 
 export default userRoutes
