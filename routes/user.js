@@ -13,10 +13,11 @@ userRoutes.post("/verify-otp", userControllerObj.verify_otp)
 userRoutes.put("/change_password", authorize, userControllerObj.change_password)
 userRoutes.post("/staff-register", userControllerObj.staffRegister)
 userRoutes.post("/staff-login", userControllerObj.staffLogin)
+userRoutes.post("/add_loyalty_visit", userControllerObj.addLoyaltyVisit)
 
 
 userRoutes.put("/edit_profile", authorize, userControllerObj.edit_profile)
 userRoutes.get("/get_profile", authorize, userControllerObj.get_profile)
 
-
+userRoutes.get("/loyalty_status/:userId", authorize, userControllerObj.getLoyaltyStatus)
 export default userRoutes

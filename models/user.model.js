@@ -13,10 +13,10 @@ User.init(
     birthday_date: DataTypes.STRING,
     membership_number: DataTypes.STRING,
     access_token: DataTypes.TEXT,
-    // otp: {
-    //   type: DataTypes.STRING,
-    //   allowNull: true,
-    // },
+    otp: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     otpExpiry: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -34,6 +34,15 @@ User.init(
       unique: true,
       allowNull: true,
     },
+
+    total_spent: {
+  type: DataTypes.DECIMAL(10, 2),
+  defaultValue: 0.00
+},
+loyalty_points: {
+  type: DataTypes.INTEGER,
+  defaultValue: 0
+},
 
     title: { type: DataTypes.STRING, allowNull: true },
     gender: { type: DataTypes.STRING, allowNull: true },
