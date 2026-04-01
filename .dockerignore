@@ -1,7 +1,13 @@
+<<<<<<< HEAD
 node_modules
 npm-debug.log
 Dockerfile
 .dockerignore
 .git
 .gitignore
+=======
+node_modules
+npm-debug.log
+.git
+>>>>>>> d9029b519d8564e60af0044a72be968e12b47a7a
 .env

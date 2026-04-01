@@ -251,7 +251,7 @@ class UserService {
         return res.status(400).json({ message: "user not found" })
       }
       await userModel?.update({ access_token: null }, { where: { id: user_obj?.id } })
-      return res.status(200).json({ message: "logout success", status: 200, success: true })
+      return res.status(200).json({ message: "logout success=====", status: 200, success: true })
     }
     catch (error) {
       console.log(error, "errorerror")
@@ -446,47 +446,135 @@ class UserService {
   }
 
 
-  async verify_otp(req, res) {
-    try {
-      const { phone, code, membership_number } = req.body;
 
-      // Get user record
-      const user = await User.findOne({ where: { phone, membership_number }, raw: true, order: [['id', 'DESC']] });
-      if (!user) {
-        return res.status(404).json({ success: false, message: "User not found" });
-      }
+ // Ensure Op is imported for advanced queries
 
-      // Check if OTP exists
-      if (!user.otp) {
-        return res
-          .status(400)
-          .json({ success: false, message: "No OTP sent to this phone" });
-      }
 
-      // Check expiry
-      if (new Date() > new Date(user.otpExpiry)) {
-        return res
-          .status(400)
-          .json({ success: false, message: "OTP has expired" });
-      }
 
-      // Compare OTP
-      if (code.toString() === user.otp.toString()) {
-        // Clear OTP after successful verification
-        await User.update({ otp: null, otpExpiry: null, is_phone_verify: true }, { where: { phone, is_phone_verify: false, membership_number } });
+///////
+async verify_otp  (req, res)  {
+  try {
+    const { phone, code, membership_number } = req.body;
 
-        return res.json({
-          success: true,
-          message: "✅ Phone verified successfully!",
-        });
-      } else {
-        return res.json({ success: false, message: "❌ Invalid OTP" });
-      }
-    } catch (err) {
-      console.error("Error verifying OTP:", err);
-      res.status(500).json({ success: false, message: err.message });
+    // 1. Basic Validation
+    if (!phone || !code || !membership_number) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "All fields (phone, code, membership_number) are required." 
+      });
     }
+
+    // 2. Find the specific record that HAS an active OTP
+    // This handles your duplicate phone number rows by ignoring rows where otp is null
+    const user = await User.findOne({ 
+      where: { 
+        phone: phone, 
+        membership_number: membership_number,
+        otp: { [Op.ne]: null } // Finds the row where OTP is not null
+      }, 
+      raw: true, 
+      order: [['id', 'DESC']] 
+    });
+
+    // 3. Handle user not found
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "No active verification session found. Please request a new OTP." 
+      });
+    }
+
+    // 4. Check Expiry
+    const currentTime = new Date();
+    const expiryTime = new Date(user.otpExpiry);
+
+    if (currentTime > expiryTime) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "OTP has expired. Please try again." 
+      });
+    }
+
+    // 5. Compare the codes (using .toString() to prevent type mismatch)
+    if (code.toString() === user.otp.toString()) {
+      
+      // 6. Update only the specific row we found using its unique ID
+      await User.update(
+        { 
+          otp: null, 
+          otpExpiry: null, 
+          is_phone_verify: true 
+        }, 
+        { 
+          where: { id: user.id } 
+        }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "✅ Phone verified successfully!",
+      });
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: "❌ Invalid OTP code." 
+      });
+    }
+
+  } catch (err) {
+    // Log the actual error to your console so you can see exactly what's breaking
+    console.error("VERIFICATION_ERROR:", err);
+    
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error during verification.",
+      error: err.message // Displays the actual error in the response for debugging
+    });
   }
+};
+
+
+  // async verify_otp(req, res) {
+  //   try {
+  //     const { phone, code, membership_number } = req.body;
+
+  //     // Get user record
+  //     const user = await User.findOne({ where: { phone, membership_number }, raw: true, order: [['id', 'DESC']] });
+  //     if (!user) {
+  //       return res.status(404).json({ success: false, message: "User not found" });
+  //     }
+
+  //     // Check if OTP exists
+  //     if (!user.otp) {
+  //       return res
+  //         .status(400)
+  //         .json({ success: false, message: "No OTP sent to this phone" });
+  //     }
+
+  //     // Check expiry
+  //     if (new Date() > new Date(user.otpExpiry)) {
+  //       return res
+  //         .status(400)
+  //         .json({ success: false, message: "OTP has expired" });
+  //     }
+
+  //     // Compare OTP
+  //     if (code.toString() === user.otp.toString()) {
+  //       // Clear OTP after successful verification
+  //       await User.update({ otp: null, otpExpiry: null, is_phone_verify: true }, { where: { phone, is_phone_verify: false, membership_number } });
+
+  //       return res.json({
+  //         success: true,
+  //         message: "✅ Phone verified successfully!",
+  //       });
+  //     } else {
+  //       return res.json({ success: false, message: "❌ Invalid OTP" });
+  //     }
+  //   } catch (err) {
+  //     console.error("Error verifying OTP:", err);
+  //     res.status(500).json({ success: false, message: err.message });
+  //   }
+  // }
 
 
   ////////////

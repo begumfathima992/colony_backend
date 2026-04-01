@@ -2,7 +2,7 @@ import Joi from "joi";
 import userServiceObj from "../services/user.services.js";
 import moment from 'moment'
 import { change_password_schema, UserLoginSchema, UserSchema, SendOtpSchema, VerifyOtpSchema } from "../helper/validator/user.validator.js";
-
+import userModel from "../models/user.model.js";
 
 const options = {
     abortEarly: false,
@@ -176,6 +176,85 @@ class userController {
             return res.status(500).json({ message: error?.message, statusCode: 500, success: false })
         }
     }
+    ///////CALCULATE LOYALTY
+    async addLoyaltyVisit(req, res) {
+    try {
+        // membership_number matches the column in your User model
+        const { membership_number, amountSpent } = req.body;
+
+        // 1. Validation
+        if (!amountSpent || amountSpent <= 0) {
+            return res.status(400).json({ success: false, message: "Invalid amount entered." });
+        }
+
+        // 2. Point Calculation Logic (1 point for every £10 spent)
+        // Adjust the multiplier as per your restaurant policy
+        const pointsEarned = Math.floor(amountSpent * 0.10); 
+
+        // 3. Find the User in the Database
+        const user = await userModel.findOne({ where: { membership_number: membership_number } });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Customer not found." });
+        }
+
+        // 4. Update the User using Sequelize Increment
+        // This ensures the math happens safely in the database
+        await user.increment({
+            total_spent: amountSpent,
+            loyalty_points: pointsEarned
+        });
+
+        // Reload to get the newest values after incrementing
+        await user.reload();
+
+        // 5. Success Response
+        res.status(200).json({
+            success: true,
+            message: "Loyalty points credited successfully!",
+            data: {
+                customerName: user.name,
+                membership_number: user.membership_number,
+                pointsEarned: pointsEarned,
+                currentTotalPoints: user.loyalty_points,
+                lifetimeSpend: user.total_spent
+            }
+        });
+
+    } catch (error) {
+        console.error("Loyalty Error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+
+async getLoyaltyStatus  (req, res)  {
+  try {
+    const { userId } = req.params;
+
+    // Fetch user and only select relevant fields for security
+    const user = await userModel.findByPk(userId, {
+      attributes: ['id', 'name', 'loyalty_points', 'total_spent', 'membership_number']
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        membershipNumber: user.membership_number,
+        currentPoints: user.loyalty_points,
+        totalInvested: user.total_spent,
+        // Optional: Add a tier logic based on points
+        tier: user.loyalty_points > 500 ? 'Gold' : 'Silver'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error retrieving loyalty data', error: error.message });
+  }
+};
 
 
 
